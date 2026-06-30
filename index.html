@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockFix Field Performance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/msal/2.38.3/msal-browser.min.js"></script>
+<style>
+  :root{
+    --navy-900:#0a1f33;
+    --navy-800:#0f2c47;
+    --navy-700:#15406b;
+    --blue-500:#2c6fb0;
+    --blue-300:#6fa8d6;
+    --bg:#eef2f6;
+    --card-bg:#ffffff;
+    --border:#dbe3ec;
+    --text-900:#0f1f2e;
+    --text-600:#51677d;
+    --text-400:#8497a8;
+
+    --c-optimal:#1f9d6b;
+    --c-overstock:#e0a82e;
+    --c-understock:#d9722c;
+    --c-oos:#c93b3b;
+    --c-idle:#7c8aa0;
+    --c-dead:#6b2737;
+    --c-negative:#9b2fae;
+    --c-unknown:#a8b3bf;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text-900);
+  }
+  header{
+    background:linear-gradient(135deg,var(--navy-900),var(--navy-700));
+    color:#fff;
+    padding:22px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:16px;
+  }
+  header h1{
+    margin:0;
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:.2px;
+  }
+  header .sub{
+    font-size:12.5px;
+    color:#a9c1d6;
+    margin-top:4px;
+  }
+  .header-controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  select, input[type="text"]{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:7px 10px;
+    font-size:13px;
+    color:var(--text-900);
+  }
+  .header-controls select{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.25);
+    color:#fff;
+  }
+  .header-controls select option{ color:#000; }
+
+  main{ padding:24px 28px 60px; max-width:1400px; margin:0 auto; }
+
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:14px;
+    margin-bottom:22px;
+  }
+  .kpi-card{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 16px 14px;
+    border-top:3px solid var(--blue-500);
+  }
+  .kpi-card .label{ font-size:11.5px; color:var(--text-600); text-transform:uppercase; letter-spacing:.4px; font-weight:600;}
+  .kpi-card .value{ font-size:26px; font-weight:700; margin-top:6px; color:var(--navy-900); }
+  .kpi-card .delta{ font-size:11.5px; margin-top:4px; }
+  .delta.up{ color:var(--c-oos); }
+  .delta.down{ color:var(--c-optimal); }
+  .kpi-card.c-optimal{ border-top-color:var(--c-optimal); }
+  .kpi-card.c-overstock{ border-top-color:var(--c-overstock); }
+  .kpi-card.c-understock{ border-top-color:var(--c-understock); }
+  .kpi-card.c-oos{ border-top-color:var(--c-oos); }
+
+  .panel{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px 20px;
+    margin-bottom:20px;
+  }
+  .panel h2{
+    font-size:14px;
+    margin:0 0 14px;
+    color:var(--navy-900);
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .panel h2 .tag{
+    font-size:11px;
+    font-weight:600;
+    color:var(--text-400);
+    text-transform:none;
+  }
+
+  .grid-2{ display:grid; grid-template-columns:2fr 1fr; gap:18px; }
+
+  canvas{ max-width:100%; }
+
+  .legend-row{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:11.5px; color:var(--text-600);}
+  .legend-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+
+  .filters{
+    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center;
+  }
+  .filters .grow{ flex:1; min-width:160px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  thead th{
+    background:var(--navy-800);
+    color:#fff;
+    text-align:left;
+    padding:9px 10px;
+    font-weight:600;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    position:sticky; top:0;
+  }
+  tbody td{
+    padding:8px 10px;
+    border-bottom:1px solid var(--border);
+    color:var(--text-900);
+  }
+  tbody tr:hover{ background:#f3f7fb; }
+  .table-scroll{ max-height:520px; overflow:auto; border:1px solid var(--border); border-radius:8px; }
+
+  .badge{
+    display:inline-block;
+    padding:3px 8px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:600;
+    color:#fff;
+  }
+  .pager{ display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:12.5px; color:var(--text-600);}
+  .pager button{
+    background:var(--navy-800); color:#fff; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12.5px;
+  }
+  .pager button:disabled{ opacity:.4; cursor:default; }
+
+  .notice{
+    background:#fff7e6;
+    border:1px solid #f0d28a;
+    color:#7a5a05;
+    font-size:12.5px;
+    padding:10px 14px;
+    border-radius:8px;
+    margin-bottom:14px;
+  }
+  a.img-link{ color:var(--blue-500); text-decoration:none; font-weight:600; }
+  a.img-link:hover{ text-decoration:underline; }
+  .muted{ color:var(--text-400); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>StockFix Field Performance</h1>
+    <div class="sub" id="subtitle">Loading...</div>
+  </div>
+  <div class="header-controls">
+    <button id="signInBtn" style="background:var(--blue-500);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600;">Sign in to SharePoint</button>
+    <span id="authStatus" style="font-size:12px;color:#a9c1d6;"></span>
+    <select id="clientFilter"><option value="__all__">All clients</option></select>
+    <select id="weekFilter"></select>
+  </div>
+</header>
+
+<main>
+
+  <div id="weekNotice"></div>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h2>Stock classification trend <span class="tag" id="trendTag"></span></h2>
+      <canvas id="trendChart" height="260"></canvas>
+      <div class="legend-row" id="trendLegend"></div>
+    </div>
+    <div class="panel">
+      <h2>Action status mix <span class="tag">selected week</span></h2>
+      <canvas id="statusChart" height="260"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Store / SKU detail <span class="tag" id="detailTag"></span></h2>
+    <div class="filters">
+      <input type="text" id="searchBox" class="grow" placeholder="Search store, article, barcode, rep...">
+      <select id="bannerFilter"><option value="__all__">All banners</option></select>
+      <select id="classFilter"><option value="__all__">All classifications</option></select>
+      <select id="statusFilter"><option value="__all__">All action statuses</option></select>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Week</th><th>Client</th><th>Banner</th><th>Region</th><th>Store</th>
+            <th>Article</th><th>DC SOH</th><th>Store SOH</th><th>Classification</th>
+            <th>Action</th><th>Status</th><th>Rep</th><th>Images</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <span id="pagerInfo"></span>
+      <div>
+        <button id="prevPage">&larr; Prev</button>
+        <button id="nextPage">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="loadingScreen" style="position:fixed;inset:0;background:#eef2f6;display:flex;align-items:center;justify-content:center;font-size:14px;color:#51677d;z-index:999;">
+  Sign in to load live StockFix data from SharePoint&hellip;
+</div>
+
+<script>
+// =========================================================================
+// CONFIG — fill these in once the Azure AD app registration is confirmed
+// =========================================================================
+const MSAL_CONFIG = {
+  clientId: "2e19d14d-6914-4f52-8bbb-119481314eef",
+  tenantId: "cbe83df2-b350-4dab-8d5f-f78d21fe7d27", // Meridian Group tenant
+  redirectUri: "https://cpillay2404.github.io/stockfix-dashboard/",
+};
+
+// SharePoint site + folder where process_stockfix.py output was uploaded.
+const SHAREPOINT_HOSTNAME = "meridiangroupza.sharepoint.com";
+const SHAREPOINT_SITE_PATH = "/sites/StockFixInventory";
+const DASHBOARD_DATA_FOLDER = "StockFix/dashboard-data";
+
+// =========================================================================
+// MSAL setup
+// =========================================================================
+const msalInstance = new msal.PublicClientApplication({
+  auth: {
+    clientId: MSAL_CONFIG.clientId,
+    authority: `https://login.microsoftonline.com/${MSAL_CONFIG.tenantId}`,
+    redirectUri: MSAL_CONFIG.redirectUri,
+  },
+  cache: { cacheLocation: "sessionStorage" },
+});
+
+const GRAPH_SCOPES = ["Sites.Read.All"];
+
+async function getGraphToken() {
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length === 0) throw new Error("Not signed in");
+  try {
+    const result = await msalInstance.acquireTokenSilent({ scopes: GRAPH_SCOPES, account: accounts[0] });
+    return result.accessToken;
+  } catch (e) {
+    const result = await msalInstance.acquireTokenPopup({ scopes: GRAPH_SCOPES });
+    return result.accessToken;
+  }
+}
+
+async function graphFetch(url, accessToken, asArrayBuffer) {
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new Error(`Graph request failed (${res.status}): ${url}`);
+  return asArrayBuffer ? res.arrayBuffer() : res.json();
+}
+
+let siteId = null;
+let driveId = null;
+
+async function resolveSiteAndDrive(token) {
+  const site = await graphFetch(
+    `https://graph.microsoft.com/v1.0/sites/${SHAREPOINT_HOSTNAME}:${SHAREPOINT_SITE_PATH}`,
+    token
+  );
+  siteId = site.id;
+  const drive = await graphFetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive`, token);
+  driveId = drive.id;
+}
+
+async function fetchJsonFile(token, relativePath) {
+  // Plain string template literal path (not encodeURIComponent) — matches the
+  // working pattern used for the P&G Initiatives / Staedtler dashboards on this tenant.
+  const url = `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${relativePath}:/content`;
+  return graphFetch(url, token);
+}
+
+async function fetchGzJsonlFile(token, relativePath) {
+  const url = `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${relativePath}:/content`;
+  const buf = await graphFetch(url, token, true);
+  const text = pako.inflate(new Uint8Array(buf), { to: "string" });
+  return text.split("\n").filter(Boolean).map(line => JSON.parse(line));
+}
+
+// =========================================================================
+// Data loading
+// =========================================================================
+let rollup = [];          // built client-side from summary.json: [{week, client, classification, count}]
+let actionStatusRollup = [];
+let weeksIndex = [];
+let weekRowCache = {};    // week -> full row array, loaded on demand
+let LATEST_WEEK = null;
+
+function buildRollups(summaryRows) {
+  const byClientClass = {};
+  const byStatus = {};
+  summaryRows.forEach(r => {
+    const k1 = `${r.week}\u0001${r.client}\u0001${r.classification}`;
+    byClientClass[k1] = (byClientClass[k1] || 0) + r.count;
+    const k2 = `${r.week}\u0001${r.actionStatus}`;
+    byStatus[k2] = (byStatus[k2] || 0) + r.count;
+  });
+  rollup = Object.entries(byClientClass).map(([k, count]) => {
+    const [week, client, classification] = k.split("\u0001");
+    return { week, client, classification, count };
+  });
+  actionStatusRollup = Object.entries(byStatus).map(([k, count]) => {
+    const [week, actionStatus] = k.split("\u0001");
+    return { week, actionStatus, count };
+  });
+}
+
+async function loadAllData(token) {
+  document.getElementById("authStatus").textContent = "Resolving SharePoint site...";
+  await resolveSiteAndDrive(token);
+
+  document.getElementById("authStatus").textContent = "Loading summary + week index...";
+  const [summaryRows, weeksIdx] = await Promise.all([
+    fetchJsonFile(token, `${DASHBOARD_DATA_FOLDER}/summary.json`),
+    fetchJsonFile(token, `${DASHBOARD_DATA_FOLDER}/weeks_index.json`),
+  ]);
+  buildRollups(summaryRows);
+  weeksIndex = weeksIdx;
+  LATEST_WEEK = weeksIndex[weeksIndex.length - 1].week;
+  state.week = LATEST_WEEK;
+
+  document.getElementById("authStatus").textContent = `Loading latest week (${LATEST_WEEK})...`;
+  await loadWeek(token, LATEST_WEEK);
+
+  document.getElementById("authStatus").textContent = "Connected";
+  document.getElementById("loadingScreen").style.display = "none";
+  initUI();
+}
+
+async function loadWeek(token, week) {
+  if (weekRowCache[week]) return weekRowCache[week];
+  const entry = weeksIndex.find(w => w.week === week);
+  if (!entry) return [];
+  const gzPath = `${DASHBOARD_DATA_FOLDER}/${entry.file}.gz`; // weeks/week_YYYY-MM-DD.jsonl.gz
+  const rows = await fetchGzJsonlFile(token, gzPath);
+  weekRowCache[week] = rows;
+  return rows;
+}
+
+// =========================================================================
+// Sign-in
+// =========================================================================
+document.getElementById("signInBtn").addEventListener("click", async () => {
+  try {
+    document.getElementById("authStatus").textContent = "Signing in...";
+    await msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
+    const token = await getGraphToken();
+    await loadAllData(token);
+  } catch (e) {
+    console.error(e);
+    document.getElementById("authStatus").textContent = "Sign-in failed — see console";
+  }
+});
+
+// =========================================================================
+// Rendering — same logic as the preview build, now driven by live data
+// =========================================================================
+const CLASS_HEX = {
+  'Optimal': '#1f9d6b','Overstock': '#e0a82e','Understock': '#d9722c',
+  'Out of Stock': '#c93b3b','No Sales (Idle Stock)': '#7c8aa0',
+  'No Sales (Dead Stock)': '#6b2737','Negative SOH': '#9b2fae',
+};
+const STATUS_HEX = {
+  'Actioned': '#1f9d6b', 'Completed': '#1f9d6b', 'Fixed': '#1f9d6b',
+  'Pending': '#e0a82e', 'Not Actioned': '#c93b3b', 'Not Fixed': '#c93b3b',
+  'Escalated': '#9b2fae', 'Unknown': '#a8b3bf',
+};
+function statusColor(s){
+  if (STATUS_HEX[s]) return STATUS_HEX[s];
+  if (s.includes('Escalated')) return '#9b2fae';
+  if (s.includes('Pending')) return '#e0a82e';
+  if (s.includes('Actioned')) return '#1f9d6b';
+  return '#a8b3bf';
+}
+
+let state = {
+  client: '__all__', week: null, banner: '__all__', classification: '__all__',
+  status: '__all__', search: '', page: 1, pageSize: 50,
+};
+
+let clientFilterEl, weekFilterEl, bannerFilterEl, classFilterEl, statusFilterEl;
+
+function initUI() {
+  clientFilterEl = document.getElementById('clientFilter');
+  weekFilterEl = document.getElementById('weekFilter');
+  bannerFilterEl = document.getElementById('bannerFilter');
+  classFilterEl = document.getElementById('classFilter');
+  statusFilterEl = document.getElementById('statusFilter');
+
+  const clients = [...new Set(rollup.map(r => r.client))].sort();
+  clients.forEach(c => {
+    const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+    clientFilterEl.appendChild(opt);
+  });
+
+  weeksIndex.forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w.week;
+    opt.textContent = `Week ending ${w.week} (${w.rowCount.toLocaleString()} lines)`;
+    if (w.week === LATEST_WEEK) opt.selected = true;
+    weekFilterEl.appendChild(opt);
+  });
+
+  const currentRows = weekRowCache[LATEST_WEEK] || [];
+  const banners = [...new Set(currentRows.map(r => r.banner))].filter(Boolean).sort();
+  banners.forEach(b => {
+    const opt = document.createElement('option'); opt.value = b; opt.textContent = b;
+    bannerFilterEl.appendChild(opt);
+  });
+  Object.keys(CLASS_HEX).forEach(c => {
+    const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
+    classFilterEl.appendChild(opt);
+  });
+  const statuses = [...new Set(currentRows.map(r => r.actionStatus))].filter(Boolean).sort();
+  statuses.forEach(s => {
+    const opt = document.createElement('option'); opt.value = s; opt.textContent = s;
+    statusFilterEl.appendChild(opt);
+  });
+
+  document.getElementById('subtitle').textContent =
+    `Live SharePoint feed \u00b7 ${weeksIndex.length} weeks tracked`;
+
+  clientFilterEl.addEventListener('change', e => { state.client = e.target.value; state.page = 1; rerenderAll(); });
+  weekFilterEl.addEventListener('change', async e => {
+    state.week = e.target.value; state.page = 1;
+    document.getElementById('authStatus').textContent = `Loading week ${state.week}...`;
+    const token = await getGraphToken();
+    await loadWeek(token, state.week);
+    document.getElementById('authStatus').textContent = 'Connected';
+    rerenderAll();
+  });
+  bannerFilterEl.addEventListener('change', e => { state.banner = e.target.value; state.page = 1; renderTable(); });
+  classFilterEl.addEventListener('change', e => { state.classification = e.target.value; state.page = 1; renderTable(); });
+  statusFilterEl.addEventListener('change', e => { state.status = e.target.value; state.page = 1; renderTable(); });
+  document.getElementById('searchBox').addEventListener('input', e => { state.search = e.target.value; state.page = 1; renderTable(); });
+  document.getElementById('prevPage').addEventListener('click', () => { if (state.page>1){ state.page--; renderTable(); } });
+  document.getElementById('nextPage').addEventListener('click', () => { state.page++; renderTable(); });
+
+  rerenderAll();
+}
+
+function currentWeekRows(){ return weekRowCache[state.week] || []; }
+
+function rollupFiltered(){
+  return rollup.filter(r => state.client === '__all__' || r.client === state.client);
+}
+function weeklyClassificationTotals(){
+  const data = rollupFiltered();
+  const byWeek = {};
+  data.forEach(r => {
+    byWeek[r.week] = byWeek[r.week] || {};
+    byWeek[r.week][r.classification] = (byWeek[r.week][r.classification] || 0) + Number(r.count);
+  });
+  return byWeek;
+}
+function filteredRows(){
+  return currentWeekRows().filter(r => {
+    if (state.client !== '__all__' && r.client !== state.client) return false;
+    if (state.banner !== '__all__' && r.banner !== state.banner) return false;
+    if (state.classification !== '__all__' && r.classification !== state.classification) return false;
+    if (state.status !== '__all__' && r.actionStatus !== state.status) return false;
+    if (state.search) {
+      const s = state.search.toLowerCase();
+      const hay = [r.store, r.article, r.barcode, r.rep, r.manager].join(' ').toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+
+function renderKpis(){
+  const weekRows = currentWeekRows().filter(r => state.client === '__all__' || r.client === state.client);
+  const counts = {};
+  weekRows.forEach(r => { counts[r.classification] = (counts[r.classification]||0) + 1; });
+  const total = weekRows.length;
+  const pct = (n) => total ? Math.round((n/total)*1000)/10 : 0;
+  const actionedCount = weekRows.filter(r => (r.actionStatus||'').includes('Actioned') || r.actionStatus==='Fixed' || r.actionStatus==='Completed').length;
+  const pctActioned = total ? Math.round((actionedCount/total)*1000)/10 : 0;
+
+  const cards = [
+    {label: 'Lines tracked (this week)', value: total.toLocaleString(), cls:''},
+    {label: '% actioned', value: pctActioned + '%', cls:'c-optimal'},
+    {label: 'Out of stock', value: (counts['Out of Stock']||0).toLocaleString() + ' \u00b7 ' + pct(counts['Out of Stock']||0) + '%', cls:'c-oos'},
+    {label: 'Overstock', value: (counts['Overstock']||0).toLocaleString() + ' \u00b7 ' + pct(counts['Overstock']||0) + '%', cls:'c-overstock'},
+    {label: 'Understock', value: (counts['Understock']||0).toLocaleString() + ' \u00b7 ' + pct(counts['Understock']||0) + '%', cls:'c-understock'},
+    {label: 'Optimal', value: (counts['Optimal']||0).toLocaleString() + ' \u00b7 ' + pct(counts['Optimal']||0) + '%', cls:'c-optimal'},
+  ];
+  document.getElementById('kpiRow').innerHTML = cards.map(c => `
+    <div class="kpi-card ${c.cls}"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>
+  `).join('');
+}
+
+let trendChartInstance = null;
+function renderTrendChart(){
+  const byWeek = weeklyClassificationTotals();
+  const weeks = Object.keys(byWeek).sort();
+  const classes = Object.keys(CLASS_HEX);
+  const datasets = classes.map(cls => ({
+    label: cls, data: weeks.map(w => byWeek[w][cls] || 0),
+    borderColor: CLASS_HEX[cls], backgroundColor: CLASS_HEX[cls] + '33',
+    fill: true, tension: 0.25, pointRadius: 0, borderWidth: 2,
+  }));
+  const ctx = document.getElementById('trendChart');
+  if (trendChartInstance) trendChartInstance.destroy();
+  trendChartInstance = new Chart(ctx, {
+    type: 'line', data: { labels: weeks, datasets },
+    options: {
+      responsive: true, interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { stacked: true, ticks: { maxRotation: 60, minRotation: 60, font: {size: 10} } },
+        y: { stacked: true, ticks: { font: {size: 11} } },
+      },
+      plugins: { legend: { display: false } },
+    },
+  });
+  document.getElementById('trendLegend').innerHTML = classes.map(c =>
+    `<span><span class="legend-dot" style="background:${CLASS_HEX[c]}"></span>${c}</span>`
+  ).join('');
+  document.getElementById('trendTag').textContent =
+    (state.client === '__all__' ? 'all clients' : state.client) + ` \u00b7 full ${weeks.length}-week history`;
+}
+
+let statusChartInstance = null;
+function renderStatusChart(){
+  const weekRows = currentWeekRows().filter(r => state.client === '__all__' || r.client === state.client);
+  const counts = {};
+  weekRows.forEach(r => { const s = r.actionStatus || 'Unknown'; counts[s] = (counts[s]||0) + 1; });
+  const labels = Object.keys(counts);
+  const data = labels.map(l => counts[l]);
+  const colors = labels.map(statusColor);
+  const ctx = document.getElementById('statusChart');
+  if (statusChartInstance) statusChartInstance.destroy();
+  statusChartInstance = new Chart(ctx, {
+    type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10.5 }, boxWidth: 10 } } }, cutout: '60%' },
+  });
+}
+
+function classBadge(cls){ return `<span class="badge" style="background:${CLASS_HEX[cls] || '#a8b3bf'}">${cls || 'Unclassified'}</span>`; }
+function statusBadge(s){ return `<span class="badge" style="background:${statusColor(s||'Unknown')}">${s || 'Unknown'}</span>`; }
+
+function renderTable(){
+  const filtered = filteredRows();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
+  if (state.page > totalPages) state.page = totalPages;
+  const start = (state.page - 1) * state.pageSize;
+  const pageRows = filtered.slice(start, start + state.pageSize);
+  const tbody = document.getElementById('tableBody');
+
+  if (pageRows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="13" class="muted" style="padding:24px;text-align:center;">No rows match these filters.</td></tr>`;
+  } else {
+    tbody.innerHTML = pageRows.map(r => {
+      const imgs = [
+        r.image ? `<a class="img-link" href="${r.image}" target="_blank">Image</a>` : '',
+        r.image2 ? `<a class="img-link" href="${r.image2}" target="_blank">Image2</a>` : '',
+        r.systemImage ? `<a class="img-link" href="${r.systemImage}" target="_blank">System</a>` : '',
+        r.piImage ? `<a class="img-link" href="${r.piImage}" target="_blank">PI</a>` : '',
+      ].filter(Boolean).join(' \u00b7 ') || '<span class="muted">\u2014</span>';
+      return `<tr>
+        <td>${r.week||''}</td><td>${r.client||''}</td><td>${r.banner||''}</td><td>${r.region||''}</td>
+        <td>${r.store||''}</td><td>${r.article||''}</td><td>${r.dcSoh ?? ''}</td><td>${r.storeSoh ?? ''}</td>
+        <td>${classBadge(r.classification)}</td><td>${r.action||''}</td><td>${statusBadge(r.actionStatus)}</td>
+        <td>${r.rep||''}</td><td>${imgs}</td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('pagerInfo').textContent =
+    filtered.length ? `Showing ${start+1}-${Math.min(start+state.pageSize, filtered.length)} of ${filtered.length.toLocaleString()} rows` : '';
+  document.getElementById('prevPage').disabled = state.page <= 1;
+  document.getElementById('nextPage').disabled = state.page >= totalPages;
+  document.getElementById('detailTag').textContent = `${filtered.length.toLocaleString()} rows \u00b7 week ${state.week}`;
+}
+
+function renderWeekNotice(){ document.getElementById('weekNotice').innerHTML = ''; }
+
+function rerenderAll(){
+  renderKpis(); renderTrendChart(); renderStatusChart(); renderWeekNotice(); renderTable();
+}
+
+// Auto-resume session if already signed in (e.g. page refresh)
+(async () => {
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    try {
+      const token = await getGraphToken();
+      await loadAllData(token);
+    } catch (e) {
+      console.warn('Silent resume failed, user must sign in again', e);
+    }
+  }
+})();
+
+</script>
+
+</body>
+</html>
