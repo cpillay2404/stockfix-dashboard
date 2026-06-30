@@ -187,7 +187,7 @@
   .muted{ color:var(--text-400); }
 </style>
 </head>
-<body>
+<body class="auth-pending">
 
 <header>
   <div>
@@ -195,7 +195,6 @@
     <div class="sub" id="subtitle">Loading...</div>
   </div>
   <div class="header-controls">
-    <button id="signInBtn" style="background:var(--blue-500);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600;">Sign in to SharePoint</button>
     <span id="authStatus" style="font-size:12px;color:#a9c1d6;"></span>
     <select id="clientFilter"><option value="__all__">All clients</option></select>
     <select id="weekFilter"></select>
@@ -251,8 +250,21 @@
 
 </main>
 
-<div id="loadingScreen" style="position:fixed;inset:0;background:#eef2f6;display:flex;align-items:center;justify-content:center;font-size:14px;color:#51677d;z-index:999;">
-  Sign in to load live StockFix data from SharePoint&hellip;
+<style id="authBlurStyle">
+  body.auth-pending main, body.auth-pending header { filter: blur(4px); pointer-events: none; user-select: none; }
+</style>
+<div id="authOverlay" style="position:fixed;inset:0;background:rgba(10,31,51,0.55);display:flex;align-items:center;justify-content:center;z-index:200;">
+  <div style="background:#fff;border-radius:14px;padding:40px 44px;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="width:56px;height:56px;border-radius:12px;background:var(--navy-800);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </div>
+    <div style="font-size:19px;font-weight:700;color:var(--navy-900);margin-bottom:8px;">StockFix Dashboard</div>
+    <div style="font-size:13.5px;color:var(--text-600);line-height:1.5;margin-bottom:24px;">
+      Sign in with your Microsoft account to access the StockFix field data.
+    </div>
+    <button id="signInBtn" style="width:100%;background:var(--blue-500);color:#fff;border:none;border-radius:8px;padding:12px 0;font-size:14.5px;cursor:pointer;font-weight:600;">Sign in with Microsoft</button>
+    <div id="authError" style="font-size:12px;color:#c93b3b;margin-top:12px;"></div>
+  </div>
 </div>
 
 <script>
@@ -375,7 +387,8 @@ async function loadAllData(token) {
   await loadWeek(token, LATEST_WEEK);
 
   document.getElementById("authStatus").textContent = "Connected";
-  document.getElementById("loadingScreen").style.display = "none";
+  document.getElementById("authOverlay").style.display = "none";
+  document.body.classList.remove("auth-pending");
   initUI();
 }
 
@@ -393,14 +406,20 @@ async function loadWeek(token, week) {
 // Sign-in
 // =========================================================================
 document.getElementById("signInBtn").addEventListener("click", async () => {
+  const errEl = document.getElementById("authError");
+  const btn = document.getElementById("signInBtn");
+  errEl.textContent = "";
+  btn.disabled = true;
+  btn.textContent = "Signing in...";
   try {
-    document.getElementById("authStatus").textContent = "Signing in...";
     await msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
     const token = await getGraphToken();
     await loadAllData(token);
   } catch (e) {
     console.error(e);
-    document.getElementById("authStatus").textContent = "Sign-in failed — see console";
+    errEl.textContent = "Sign-in failed - please try again.";
+    btn.disabled = false;
+    btn.textContent = "Sign in with Microsoft";
   }
 });
 
