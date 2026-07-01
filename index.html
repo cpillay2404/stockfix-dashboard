@@ -309,7 +309,7 @@
         <canvas id="top10BarChart" height="250"></canvas>
       </div>
       <div class="panel">
-        <h2>Top 10 article descriptions by reason code <span class="tag"></span></h2>
+        <h2>Top 10 articles by reason code <span class="tag">completed rows only</span></h2>
         <div class="table-scroll" style="max-height:280px;">
           <table>
             <thead><tr><th>#</th><th>Article Description</th><th>Top Reason Code</th><th>Tasks</th><th>% of Total</th></tr></thead>
@@ -322,7 +322,7 @@
     <!-- BELOW FOLD: 10+11. Action Taken Summary + Manager Follow-Up -->
     <div class="grid-2">
       <div class="panel">
-        <h2>Action taken summary <span class="tag">selected week</span></h2>
+        <h2>Action taken summary <span class="tag">completed rows · rep comment</span></h2>
         <div style="display:flex;gap:16px;align-items:flex-start;">
           <div style="flex-shrink:0;width:160px;"><canvas id="actionTakenChart" height="160"></canvas></div>
           <div style="flex:1;">
@@ -435,7 +435,7 @@
             <tr>
               <th>Week</th><th>Client</th><th>Banner</th><th>Region</th><th>Store</th>
               <th>Article</th><th>DC SOH</th><th>Store SOH</th><th>Classification</th>
-              <th>Action</th><th>Status</th><th>Rep</th><th>Feedback</th><th>Comment</th><th>Images</th>
+              <th>Action</th><th>Status</th><th>Rep</th><th>Feedback</th><th>Comment</th><th>Image</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -915,7 +915,7 @@ function renderActionTakenChart(){
   const rows = filteredRows();
   const counts = {};
   rows.filter(r => isActioned(r.actionStatus)).forEach(r => {
-    const a = r.action || 'Unknown';
+    const a = r.actionComment || r.action || 'Unknown';
     counts[a] = (counts[a]||0) + 1;
   });
   const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
@@ -1083,9 +1083,7 @@ function renderTable(){
       const imgs = [
         r.image ? `<a class="img-link" href="${r.image}" target="_blank">Image</a>` : '',
         r.image2 ? `<a class="img-link" href="${r.image2}" target="_blank">Image2</a>` : '',
-        r.systemImage ? `<a class="img-link" href="${r.systemImage}" target="_blank">System</a>` : '',
-        r.piImage ? `<a class="img-link" href="${r.piImage}" target="_blank">PI</a>` : '',
-      ].filter(Boolean).join(' \u00b7 ') || '<span class="muted">\u2014</span>';
+              ].filter(Boolean).join(' \u00b7 ') || '<span class="muted">\u2014</span>';
       return `<tr>
         <td>${r.week||''}</td><td>${r.client||''}</td><td>${r.banner||''}</td><td>${r.region||''}</td>
         <td>${r.store||''}</td><td>${r.article||''}</td><td>${r.dcSoh ?? ''}</td><td>${r.storeSoh ?? ''}</td>
@@ -1218,10 +1216,11 @@ function renderTop10ByReasonCode(){
   const rows = filteredRows();
   const articleMap = {};
   rows.forEach(r => {
+    const rc = r.reasonCode;
+    if (!rc) return; // skip rows with no reason code
     const key = r.article || 'Unknown';
     articleMap[key] = articleMap[key] || {total:0, reasons:{}};
     articleMap[key].total++;
-    const rc = r.reasonCode || 'None';
     articleMap[key].reasons[rc] = (articleMap[key].reasons[rc]||0) + 1;
   });
   const totalAll = rows.length || 1;
@@ -1265,7 +1264,7 @@ function renderWhatWasWrong(){
 
 // ---------- Rep & Manager Performance ----------
 function isActioned(status){
-  return (status||'').includes('Actioned') || status === 'Fixed' || status === 'Completed';
+  return status === 'Completed' || status === 'Fixed' || (status||'').includes('Actioned');
 }
 function isPending(status){ return (status||'').includes('Pending'); }
 function isEscalated(status){ return (status||'').includes('Escalated'); }
@@ -1432,7 +1431,7 @@ function renderStoreDeepDive(){
   const rows = filteredRows().filter(r => r.store === storeName);
   const images = [];
   rows.forEach(r => {
-    [['image', r.image], ['image2', r.image2], ['systemImage', r.systemImage], ['piImage', r.piImage]].forEach(([label, url]) => {
+    [['image', r.image], ['image2', r.image2]].forEach(([label, url]) => {
       if (url) images.push({ url, label, article: r.article });
     });
   });
