@@ -1057,6 +1057,7 @@ function renderStatusChart(){
   const data = labels.map(l => counts[l]);
   const colors = labels.map(statusColor);
   const ctx = document.getElementById('statusChart');
+  if (!ctx) return;
   if (statusChartInstance) statusChartInstance.destroy();
   statusChartInstance = new Chart(ctx, {
     type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
@@ -1132,26 +1133,32 @@ function renderBannerRegionAnalytics(){
   const bannerCounts = groupCount(bannerRows, r => r.banner);
   const bannerLabels = Object.keys(bannerCounts).sort((a,b) => bannerCounts[b]-bannerCounts[a]).slice(0, 15);
   const ctxB = document.getElementById('bannerChart');
-  if (bannerChartInstance) bannerChartInstance.destroy();
-  bannerChartInstance = new Chart(ctxB, {
-    type: 'bar',
-    data: { labels: bannerLabels, datasets: [{ data: bannerLabels.map(l => bannerCounts[l]), backgroundColor: '#f47920' }] },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
-      scales: { x: { ticks: { font: { size: 10.5 } } }, y: { ticks: { font: { size: 10.5 } } } } },
-  });
-  document.getElementById('bannerAnalyticsTag').textContent = `top ${bannerLabels.length} \u00b7 week ${state.week}`;
+  if (ctxB) {
+    if (bannerChartInstance) bannerChartInstance.destroy();
+    bannerChartInstance = new Chart(ctxB, {
+      type: 'bar',
+      data: { labels: bannerLabels, datasets: [{ data: bannerLabels.map(l => bannerCounts[l]), backgroundColor: '#f47920' }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+        scales: { x: { ticks: { font: { size: 10.5 } } }, y: { ticks: { font: { size: 10.5 } } } } },
+    });
+  }
+  const bannerTag = document.getElementById('bannerAnalyticsTag');
+  if (bannerTag) bannerTag.textContent = `top ${bannerLabels.length} \u00b7 week ${state.week}`;
 
   const regionCounts = groupCount(regionRows, r => r.region);
   const regionLabels = Object.keys(regionCounts).sort((a,b) => regionCounts[b]-regionCounts[a]);
   const ctxR = document.getElementById('regionChart');
-  if (regionChartInstance) regionChartInstance.destroy();
-  regionChartInstance = new Chart(ctxR, {
-    type: 'bar',
-    data: { labels: regionLabels, datasets: [{ data: regionLabels.map(l => regionCounts[l]), backgroundColor: '#123a63' }] },
-    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
-      scales: { x: { ticks: { font: { size: 10.5 } } }, y: { ticks: { font: { size: 10.5 } } } } },
-  });
-  document.getElementById('regionAnalyticsTag').textContent = `week ${state.week}`;
+  if (ctxR) {
+    if (regionChartInstance) regionChartInstance.destroy();
+    regionChartInstance = new Chart(ctxR, {
+      type: 'bar',
+      data: { labels: regionLabels, datasets: [{ data: regionLabels.map(l => regionCounts[l]), backgroundColor: '#123a63' }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+        scales: { x: { ticks: { font: { size: 10.5 } } }, y: { ticks: { font: { size: 10.5 } } } } },
+    });
+  }
+  const regionTag = document.getElementById('regionAnalyticsTag');
+  if (regionTag) regionTag.textContent = `week ${state.week}`;
 
   // Banner x Region breakdown table (optional - only rendered if the element exists)
   const tbody = document.getElementById('bannerRegionTableBody');
