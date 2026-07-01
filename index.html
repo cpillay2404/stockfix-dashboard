@@ -9,21 +9,20 @@
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
 <style>
   :root{
-    --navy-900:#0a1f33;
-    --navy-800:#0f2c47;
-    --navy-700:#15406b;
+    --navy-900:#061a2e;
+    --navy-800:#0a2747;
+    --navy-700:#123a63;
+    --orange-500:#f47920;
     --blue-500:#2c6fb0;
-    --blue-300:#6fa8d6;
     --bg:#eef2f6;
     --card-bg:#ffffff;
     --border:#dbe3ec;
     --text-900:#0f1f2e;
     --text-600:#51677d;
     --text-400:#8497a8;
-
     --c-optimal:#1f9d6b;
-    --c-overstock:#e0a82e;
-    --c-understock:#d9722c;
+    --c-overstock:#d9a72e;
+    --c-understock:#2c8fae;
     --c-oos:#c93b3b;
     --c-idle:#7c8aa0;
     --c-dead:#6b2737;
@@ -31,160 +30,202 @@
     --c-unknown:#a8b3bf;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-    background:var(--bg);
-    color:var(--text-900);
-  }
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text-900);}
+
+  /* ── HEADER ── 48px target */
   header{
     background:linear-gradient(135deg,var(--navy-900),var(--navy-700));
     color:#fff;
-    padding:22px 28px;
+    padding:8px 20px;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    flex-wrap:wrap;
-    gap:16px;
+    gap:12px;
+    border-bottom:3px solid var(--orange-500);
+    min-height:0;
   }
-  header h1{
-    margin:0;
-    font-size:20px;
-    font-weight:700;
-    letter-spacing:.2px;
-  }
-  header .sub{
-    font-size:12.5px;
-    color:#a9c1d6;
-    margin-top:4px;
-  }
-  .header-controls{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-  select, input[type="text"]{
-    background:#fff;
-    border:1px solid var(--border);
-    border-radius:6px;
-    padding:7px 10px;
-    font-size:13px;
-    color:var(--text-900);
-  }
+  header h1{margin:0;font-size:16px;font-weight:700;letter-spacing:.1px;line-height:1.2;}
+  header .sub{font-size:10.5px;color:#a9c1d6;margin-top:1px;}
+  .header-controls{display:flex;gap:8px;align-items:center;}
   .header-controls select{
-    background:rgba(255,255,255,0.08);
-    border:1px solid rgba(255,255,255,0.25);
-    color:#fff;
+    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);
+    color:#fff;border-radius:5px;padding:4px 8px;font-size:11.5px;
   }
-  .header-controls select option{ color:#000; }
-
-  main{ padding:24px 28px 60px; max-width:1400px; margin:0 auto; }
-
-  .kpi-row{
-    display:grid;
-    grid-template-columns:repeat(6,1fr);
-    gap:14px;
-    margin-bottom:22px;
+  .header-controls select option{color:#000;}
+  select,input[type="text"]{
+    background:#fff;border:1px solid var(--border);
+    border-radius:5px;padding:4px 8px;font-size:11.5px;color:var(--text-900);
   }
-  .kpi-card{
-    background:var(--card-bg);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:16px 16px 14px;
-    border-top:3px solid var(--blue-500);
-  }
-  .kpi-card .label{ font-size:11.5px; color:var(--text-600); text-transform:uppercase; letter-spacing:.4px; font-weight:600;}
-  .kpi-card .value{ font-size:26px; font-weight:700; margin-top:6px; color:var(--navy-900); }
-  .kpi-card .delta{ font-size:11.5px; margin-top:4px; }
-  .delta.up{ color:var(--c-oos); }
-  .delta.down{ color:var(--c-optimal); }
-  .kpi-card.c-optimal{ border-top-color:var(--c-optimal); }
-  .kpi-card.c-overstock{ border-top-color:var(--c-overstock); }
-  .kpi-card.c-understock{ border-top-color:var(--c-understock); }
-  .kpi-card.c-oos{ border-top-color:var(--c-oos); }
 
+  /* ── TABS ── 43px target, sticky */
+  .tab-bar{
+    background:var(--navy-800);
+    display:flex;gap:0;padding:0 20px;
+    position:sticky;top:0;z-index:100;
+    overflow-x:auto;scrollbar-width:none;
+  }
+  .tab-bar::-webkit-scrollbar{display:none;}
+  .tab-btn{
+    background:transparent;border:none;color:#a9c1d6;
+    font-size:12px;font-weight:600;padding:10px 15px;
+    cursor:pointer;border-bottom:3px solid transparent;
+    white-space:nowrap;flex-shrink:0;line-height:1;
+  }
+  .tab-btn.active{color:#fff;border-bottom-color:var(--orange-500);}
+  .tab-btn:hover{color:#fff;}
+
+  /* ── FILTER BAR ── 44px target, sticky below tabs */
+  .filter-bar{
+    background:#fff;border-bottom:1px solid var(--border);
+    padding:6px 20px;
+    display:flex;gap:6px;align-items:center;flex-wrap:nowrap;overflow-x:auto;
+    position:sticky;top:43px;z-index:90;
+    scrollbar-width:none;
+  }
+  .filter-bar::-webkit-scrollbar{display:none;}
+  .filter-group{display:flex;align-items:center;gap:3px;flex-shrink:0;}
+  .filter-bar label{
+    font-size:9.5px;font-weight:700;color:var(--text-400);
+    text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;
+  }
+  .filter-bar select,.filter-bar input[type="text"]{
+    padding:4px 7px;font-size:11px;border-radius:4px;
+    height:28px;min-width:0;
+  }
+  .filter-bar select:focus,.filter-bar input:focus{outline:none;border-color:var(--orange-500);}
+  .filter-group.search-group{flex:1;min-width:120px;}
+  .filter-group.search-group input{width:100%;}
+
+  /* ── MAIN wrapper ── */
+  main{padding:10px 20px 40px;max-width:1440px;margin:0 auto;}
+
+  /* ── ICON KPI ROW ── 80px target */
+  .icon-kpi-row{
+    display:grid;grid-template-columns:repeat(6,1fr);
+    gap:8px;margin-bottom:8px;
+  }
+  .icon-kpi-card{
+    background:var(--card-bg);border:1px solid var(--border);border-radius:7px;
+    padding:8px 10px;display:flex;gap:9px;align-items:center;
+    min-height:0;
+  }
+  .icon-kpi-card .icon-circle{
+    width:30px;height:30px;border-radius:7px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .icon-kpi-card .label{
+    font-size:9px;color:var(--text-600);text-transform:uppercase;
+    letter-spacing:.3px;font-weight:700;line-height:1.1;
+  }
+  .icon-kpi-card .value{
+    font-size:17px;font-weight:700;color:var(--navy-900);
+    margin-top:1px;line-height:1.1;
+  }
+  .icon-kpi-card .delta{font-size:9.5px;color:var(--text-400);}
+  .delta.up{color:var(--c-oos)!important;}
+  .delta.down{color:var(--c-optimal)!important;}
+
+  /* ── CLASSIFICATION RIBBON ── 76px target */
+  .sparkline-grid{
+    display:grid;grid-template-columns:repeat(7,1fr);
+    gap:7px;
+  }
+  .spark-card{
+    border:1px solid var(--border);border-radius:6px;
+    padding:7px 9px;
+  }
+  .spark-card .spark-label{
+    font-size:9px;font-weight:700;color:var(--text-600);
+    text-transform:uppercase;letter-spacing:.3px;line-height:1.1;
+  }
+  .spark-card .spark-value{
+    font-size:15px;font-weight:700;color:var(--navy-900);
+    margin:2px 0 1px;line-height:1.1;
+  }
+  .spark-card .spark-pct{font-size:9px;color:var(--text-400);margin-bottom:3px;}
+  .spark-canvas-wrap{position:relative;height:30px;width:100%;}
+  .spark-canvas-wrap canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}
+
+  /* ── PANELS ── compact for Overview, normal for detail pages */
   .panel{
-    background:var(--card-bg);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:18px 20px;
-    margin-bottom:20px;
+    background:var(--card-bg);border:1px solid var(--border);
+    border-radius:7px;padding:10px 12px;margin-bottom:8px;
   }
   .panel h2{
-    font-size:14px;
-    margin:0 0 14px;
-    color:var(--navy-900);
-    font-weight:700;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
+    font-size:12px;margin:0 0 8px;color:var(--navy-900);
+    font-weight:700;display:flex;align-items:center;justify-content:space-between;
+    line-height:1.2;
   }
-  .panel h2 .tag{
-    font-size:11px;
-    font-weight:600;
-    color:var(--text-400);
-    text-transform:none;
-  }
+  .panel h2 .tag{font-size:9.5px;font-weight:600;color:var(--text-400);}
 
-  .grid-2{ display:grid; grid-template-columns:2fr 1fr; gap:18px; }
+  /* detail pages can override with this class */
+  .panel.detail{padding:14px 16px;margin-bottom:12px;}
+  .panel.detail h2{font-size:13.5px;margin:0 0 12px;}
 
-  canvas{ max-width:100%; }
+  /* ── GRIDS ── */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 
-  .legend-row{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:11.5px; color:var(--text-600);}
-  .legend-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
-
-  .filters{
-    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center;
-  }
-  .filters .grow{ flex:1; min-width:160px; }
-
-  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  /* ── TABLES ── */
+  table{width:100%;border-collapse:collapse;font-size:11.5px;}
   thead th{
-    background:var(--navy-800);
-    color:#fff;
-    text-align:left;
-    padding:9px 10px;
-    font-weight:600;
-    font-size:11.5px;
-    text-transform:uppercase;
-    letter-spacing:.3px;
-    position:sticky; top:0;
+    background:var(--navy-800);color:#fff;text-align:left;
+    padding:5px 8px;font-weight:600;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.3px;position:sticky;top:0;
   }
-  tbody td{
-    padding:8px 10px;
-    border-bottom:1px solid var(--border);
-    color:var(--text-900);
-  }
-  tbody tr:hover{ background:#f3f7fb; }
-  .table-scroll{ max-height:520px; overflow:auto; border:1px solid var(--border); border-radius:8px; }
+  tbody td{padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text-900);}
+  tbody tr:hover{background:#f3f7fb;}
+  .table-scroll{max-height:380px;overflow:auto;border:1px solid var(--border);border-radius:5px;}
 
-  .badge{
-    display:inline-block;
-    padding:3px 8px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:600;
-    color:#fff;
-  }
-  .pager{ display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:12.5px; color:var(--text-600);}
-  .pager button{
-    background:var(--navy-800); color:#fff; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12.5px;
-  }
-  .pager button:disabled{ opacity:.4; cursor:default; }
+  /* detail page tables can be normal size */
+  .detail table{font-size:12.5px;}
+  .detail thead th{padding:8px 10px;font-size:11.5px;}
+  .detail tbody td{padding:7px 10px;}
+  .detail .table-scroll{max-height:520px;}
 
-  .notice{
-    background:#fff7e6;
-    border:1px solid #f0d28a;
-    color:#7a5a05;
-    font-size:12.5px;
-    padding:10px 14px;
-    border-radius:8px;
-    margin-bottom:14px;
+  /* ── STACKED BARS ── */
+  .bar-row{display:grid;grid-template-columns:100px 1fr;gap:7px;align-items:center;margin-bottom:6px;}
+  .bar-row .bar-label{
+    font-size:10.5px;font-weight:600;color:var(--text-900);
+    text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  a.img-link{ color:var(--blue-500); text-decoration:none; font-weight:600; }
-  a.img-link:hover{ text-decoration:underline; }
-  .muted{ color:var(--text-400); }
+  .bar-track{height:16px;background:var(--bg);border-radius:3px;overflow:hidden;display:flex;}
+  .bar-seg{height:100%;display:flex;align-items:center;}
+  .bar-seg.actioned{background:var(--navy-700);}
+  .bar-seg.pending{background:#cdd6e0;}
+  .bar-seg .bar-seg-label{font-size:9px;color:#fff;padding-left:4px;font-weight:600;white-space:nowrap;}
+  .bar-row .bar-total{font-size:10px;color:var(--text-600);margin-left:5px;white-space:nowrap;}
+
+  /* ── MISC ── */
+  canvas{max-width:100%;}
+  .legend-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:10.5px;color:var(--text-600);}
+  .legend-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+  .filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px;align-items:center;}
+  .filters .grow{flex:1;min-width:120px;}
+  .badge{display:inline-block;padding:2px 6px;border-radius:20px;font-size:10px;font-weight:600;color:#fff;}
+  .pager{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11.5px;color:var(--text-600);}
+  .pager button{background:var(--navy-800);color:#fff;border:none;border-radius:5px;padding:4px 10px;cursor:pointer;font-size:11.5px;}
+  .pager button:disabled{opacity:.4;cursor:default;}
+  .notice{background:#fff7e6;border:1px solid #f0d28a;color:#7a5a05;font-size:11px;padding:7px 12px;border-radius:6px;margin-bottom:8px;}
+  a.img-link{color:var(--blue-500);text-decoration:none;font-weight:600;}
+  a.img-link:hover{text-decoration:underline;}
+  .muted{color:var(--text-400);}
+  .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:8px;}
+  .kpi-card{background:var(--card-bg);border:1px solid var(--border);border-radius:7px;padding:9px 11px;border-top:3px solid var(--orange-500);}
+  .kpi-card .label{font-size:9.5px;color:var(--text-600);text-transform:uppercase;letter-spacing:.4px;font-weight:600;}
+  .kpi-card .value{font-size:17px;font-weight:700;margin-top:3px;color:var(--navy-900);}
+  .kpi-card.c-optimal{border-top-color:var(--c-optimal);}
+  .kpi-card.c-overstock{border-top-color:var(--c-overstock);}
+  .kpi-card.c-understock{border-top-color:var(--c-understock);}
+  .kpi-card.c-oos{border-top-color:var(--c-oos);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .feedback-item{border:1px solid var(--border);border-radius:6px;padding:9px 11px;margin-bottom:7px;}
+  .feedback-item .fb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:10.5px;color:var(--text-600);font-weight:600;}
+  .feedback-item .fb-store{color:var(--navy-900);font-weight:700;font-size:11.5px;}
+  .feedback-item .fb-body{font-size:11.5px;color:var(--text-900);line-height:1.4;}
+  .feedback-item .fb-body .fb-label{font-weight:600;color:var(--text-600);font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;margin-right:3px;}
+
 </style>
 </head>
 <body class="auth-pending">
@@ -196,54 +237,216 @@
   </div>
   <div class="header-controls">
     <span id="authStatus" style="font-size:12px;color:#a9c1d6;"></span>
-    <select id="clientFilter"><option value="__all__">All clients</option></select>
-    <select id="weekFilter"></select>
   </div>
 </header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="repmanager">Rep &amp; Manager Performance</button>
+  <button class="tab-btn" data-tab="skuinsights">SKU Insights</button>
+  <button class="tab-btn" data-tab="storedeepdive">Store Deep Dive</button>
+  <button class="tab-btn" data-tab="feedback">Feedback</button>
+  <button class="tab-btn" data-tab="rawdata">Raw Data</button>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-group"><label>Client</label><select id="clientFilter"><option value="__all__">All clients</option></select></div>
+  <div class="filter-group"><label>Banner</label><select id="bannerFilter"><option value="__all__">All banners</option></select></div>
+  <div class="filter-group"><label>Region</label><select id="regionFilter"><option value="__all__">All regions</option></select></div>
+  <div class="filter-group"><label>Classification</label><select id="classFilter"><option value="__all__">All classifications</option></select></div>
+  <div class="filter-group"><label>Status</label><select id="statusFilter"><option value="__all__">All action statuses</option></select></div>
+  <div class="filter-group"><label>Week</label><select id="weekFilter"></select></div>
+  <div class="filter-group" style="flex:1;min-width:200px;">
+    <input type="text" id="searchBox" style="width:100%;" placeholder="Search store, article, barcode, rep...">
+  </div>
+</div>
 
 <main>
 
   <div id="weekNotice"></div>
 
-  <div class="kpi-row" id="kpiRow"></div>
+    <div class="tab-panel active" id="tab-overview">
 
-  <div class="grid-2">
-    <div class="panel">
-      <h2>Stock classification trend <span class="tag" id="trendTag"></span></h2>
-      <canvas id="trendChart" height="260"></canvas>
-      <div class="legend-row" id="trendLegend"></div>
+    <!-- ABOVE FOLD: 4. Executive KPI row -->
+    <div class="icon-kpi-row" id="iconKpiRow"></div>
+
+    <!-- ABOVE FOLD: 5. Classification ribbon -->
+    <div class="panel" style="padding:8px 12px;">
+      <h2 style="margin-bottom:6px;">Task breakdown <span class="tag">all lines · selected week · 35-week sparkline</span></h2>
+      <div class="sparkline-grid" id="taskBreakdownGrid"></div>
     </div>
-    <div class="panel">
-      <h2>Action status mix <span class="tag">selected week</span></h2>
-      <canvas id="statusChart" height="260"></canvas>
+
+    <!-- ABOVE FOLD: 6. Actioned vs Pending + Classification Summary -->
+    <div class="grid-2">
+      <div class="panel">
+        <h2>Actioned vs Pending by classification <span class="tag">selected week</span></h2>
+        <div id="actionedPendingBars"></div>
+      </div>
+      <div class="panel">
+        <h2>Classification summary <span class="tag">selected week</span></h2>
+        <div class="table-scroll" style="max-height:230px;">
+          <table>
+            <thead><tr><th>Classification</th><th>Total Tasks</th><th>Actioned</th><th>Pending</th><th>Action Rate %</th><th>Top Action Taken</th></tr></thead>
+            <tbody id="classSummaryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BELOW FOLD: 7+8. Top 10 Articles Actioned / by Completed Tasks / by Reason Code -->
+    <div class="grid-3">
+      <div class="panel">
+        <h2>Top 10 article descriptions actioned <span class="tag" id="top10ActionedTag"></span></h2>
+        <div class="table-scroll" style="max-height:280px;">
+          <table>
+            <thead><tr><th>#</th><th>Article Description</th><th>Completed</th><th>Pending</th><th>Top Issue</th><th>Top Action</th></tr></thead>
+            <tbody id="top10ActionedBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Top 10 article descriptions by completed tasks <span class="tag"></span></h2>
+        <canvas id="top10BarChart" height="250"></canvas>
+      </div>
+      <div class="panel">
+        <h2>Top 10 article descriptions by reason code <span class="tag"></span></h2>
+        <div class="table-scroll" style="max-height:280px;">
+          <table>
+            <thead><tr><th>#</th><th>Article Description</th><th>Top Reason Code</th><th>Tasks</th><th>% of Total</th></tr></thead>
+            <tbody id="top10ReasonBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BELOW FOLD: 10+11. Action Taken Summary + Manager Follow-Up -->
+    <div class="grid-2">
+      <div class="panel">
+        <h2>Action taken summary <span class="tag">selected week</span></h2>
+        <div style="display:flex;gap:16px;align-items:flex-start;">
+          <div style="flex-shrink:0;width:160px;"><canvas id="actionTakenChart" height="160"></canvas></div>
+          <div style="flex:1;">
+            <table>
+              <thead><tr><th>Action Taken</th><th>Completed</th><th>% of Completed</th></tr></thead>
+              <tbody id="actionTakenTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Manager follow-up <span class="tag">selected week</span></h2>
+        <div class="grid-2" style="gap:12px;">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;">Top Managers with Pending Tasks</div>
+            <div id="managerPendingList"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;">Top Managers with Pending Tasks by Region</div>
+            <div id="managerRegionList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tab-panel" id="tab-repmanager">
+    <div class="kpi-row" id="repManagerKpiRow" style="grid-template-columns:repeat(4,1fr);"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <h2>Rep leaderboard <span class="tag" id="repLeaderboardTag"></span></h2>
+        <div class="table-scroll" style="max-height:480px;">
+          <table>
+            <thead><tr><th>Rep</th><th>Total Lines</th><th>Pending</th><th>Escalated</th><th>% Actioned</th></tr></thead>
+            <tbody id="repLeaderboardBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Manager leaderboard <span class="tag" id="managerLeaderboardTag"></span></h2>
+        <div class="table-scroll" style="max-height:480px;">
+          <table>
+            <thead><tr><th>Manager</th><th>Total Lines</th><th>Pending</th><th>Escalated</th><th>% Actioned</th></tr></thead>
+            <tbody id="managerLeaderboardBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="panel">
-    <h2>Store / SKU detail <span class="tag" id="detailTag"></span></h2>
-    <div class="filters">
-      <input type="text" id="searchBox" class="grow" placeholder="Search store, article, barcode, rep...">
-      <select id="bannerFilter"><option value="__all__">All banners</option></select>
-      <select id="classFilter"><option value="__all__">All classifications</option></select>
-      <select id="statusFilter"><option value="__all__">All action statuses</option></select>
+  <div class="tab-panel" id="tab-skuinsights">
+    <div class="kpi-row" id="skuKpiRow" style="grid-template-columns:repeat(4,1fr);"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <h2>Top problem SKUs <span class="tag" id="topSkuTag"></span></h2>
+        <canvas id="topSkuChart" height="280"></canvas>
+      </div>
+      <div class="panel">
+        <h2>SKU by reason code <span class="tag">selected week</span></h2>
+        <canvas id="reasonCodeChart" height="280"></canvas>
+      </div>
     </div>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Week</th><th>Client</th><th>Banner</th><th>Region</th><th>Store</th>
-            <th>Article</th><th>DC SOH</th><th>Store SOH</th><th>Classification</th>
-            <th>Action</th><th>Status</th><th>Rep</th><th>Images</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+    <div class="panel">
+      <h2>SKU drilldown <span class="tag" id="skuDrilldownTag"></span></h2>
+      <div class="filters" style="margin-bottom:12px;">
+        <input type="text" id="skuSearchBox" class="grow" placeholder="Search article or barcode...">
+      </div>
+      <div class="table-scroll" style="max-height:480px;">
+        <table>
+          <thead><tr><th>Article</th><th>Barcode</th><th>Total Lines</th><th>Out of Stock</th><th>Overstock</th><th>Understock</th><th>No Sales</th><th>Optimal</th><th>Top action</th></tr></thead>
+          <tbody id="skuDrilldownBody"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="pager">
-      <span id="pagerInfo"></span>
-      <div>
-        <button id="prevPage">&larr; Prev</button>
-        <button id="nextPage">Next &rarr;</button>
+  </div>
+
+  <div class="tab-panel" id="tab-storedeepdive">
+    <div class="panel">
+      <h2>Store selector</h2>
+      <div class="filters">
+        <select id="storeSelector" class="grow"><option value="">Select a store...</option></select>
+      </div>
+    </div>
+    <div id="storeDeepDiveContent"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-feedback">
+    <div class="panel">
+      <h2>Team feedback feed <span class="tag" id="feedbackTag"></span></h2>
+      <div id="feedbackList"></div>
+      <div class="pager">
+        <span id="feedbackPagerInfo"></span>
+        <div>
+          <button id="feedbackPrevPage">&larr; Prev</button>
+          <button id="feedbackNextPage">Next &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-rawdata">
+    <div class="panel">
+      <h2>Raw data <span class="tag" id="detailTag"></span>
+        <button id="exportCsvBtn" style="background:var(--orange-500);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Export CSV</button>
+      </h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Week</th><th>Client</th><th>Banner</th><th>Region</th><th>Store</th>
+              <th>Article</th><th>DC SOH</th><th>Store SOH</th><th>Classification</th>
+              <th>Action</th><th>Status</th><th>Rep</th><th>Feedback</th><th>Comment</th><th>Images</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <span id="pagerInfo"></span>
+        <div>
+          <button id="prevPage">&larr; Prev</button>
+          <button id="nextPage">Next &rarr;</button>
+        </div>
       </div>
     </div>
   </div>
@@ -251,18 +454,18 @@
 </main>
 
 <style id="authBlurStyle">
-  body.auth-pending main, body.auth-pending header { filter: blur(4px); pointer-events: none; user-select: none; }
+  body.auth-pending main, body.auth-pending header, body.auth-pending .tab-bar, body.auth-pending .filter-bar { filter: blur(4px); pointer-events: none; user-select: none; }
 </style>
 <div id="authOverlay" style="position:fixed;inset:0;background:rgba(10,31,51,0.55);display:flex;align-items:center;justify-content:center;z-index:200;">
   <div style="background:#fff;border-radius:14px;padding:40px 44px;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-    <div style="width:56px;height:56px;border-radius:12px;background:var(--navy-800);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+    <div style="width:56px;height:56px;border-radius:12px;background:var(--orange-500);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
     </div>
     <div style="font-size:19px;font-weight:700;color:var(--navy-900);margin-bottom:8px;">StockFix Dashboard</div>
     <div style="font-size:13.5px;color:var(--text-600);line-height:1.5;margin-bottom:24px;">
       Sign in with your Microsoft account to access the StockFix field data.
     </div>
-    <button id="signInBtn" style="width:100%;background:var(--blue-500);color:#fff;border:none;border-radius:8px;padding:12px 0;font-size:14.5px;cursor:pointer;font-weight:600;">Sign in with Microsoft</button>
+    <button id="signInBtn" style="width:100%;background:var(--navy-800);color:#fff;border:none;border-radius:8px;padding:12px 0;font-size:14.5px;cursor:pointer;font-weight:600;">Sign in with Microsoft</button>
     <div id="authError" style="font-size:12px;color:#c93b3b;margin-top:12px;"></div>
   </div>
 </div>
@@ -427,7 +630,7 @@ document.getElementById("signInBtn").addEventListener("click", async () => {
 // Rendering — same logic as the preview build, now driven by live data
 // =========================================================================
 const CLASS_HEX = {
-  'Optimal': '#1f9d6b','Overstock': '#e0a82e','Understock': '#d9722c',
+  'Optimal': '#1f9d6b','Overstock': '#d9a72e','Understock': '#2c8fae',
   'Out of Stock': '#c93b3b','No Sales (Idle Stock)': '#7c8aa0',
   'No Sales (Dead Stock)': '#6b2737','Negative SOH': '#9b2fae',
 };
@@ -445,16 +648,17 @@ function statusColor(s){
 }
 
 let state = {
-  client: '__all__', week: null, banner: '__all__', classification: '__all__',
+  client: '__all__', week: null, banner: '__all__', region: '__all__', classification: '__all__',
   status: '__all__', search: '', page: 1, pageSize: 50,
 };
 
-let clientFilterEl, weekFilterEl, bannerFilterEl, classFilterEl, statusFilterEl;
+let clientFilterEl, weekFilterEl, bannerFilterEl, regionFilterEl, classFilterEl, statusFilterEl;
 
 function initUI() {
   clientFilterEl = document.getElementById('clientFilter');
   weekFilterEl = document.getElementById('weekFilter');
   bannerFilterEl = document.getElementById('bannerFilter');
+  regionFilterEl = document.getElementById('regionFilter');
   classFilterEl = document.getElementById('classFilter');
   statusFilterEl = document.getElementById('statusFilter');
 
@@ -478,6 +682,11 @@ function initUI() {
     const opt = document.createElement('option'); opt.value = b; opt.textContent = b;
     bannerFilterEl.appendChild(opt);
   });
+  const regions = [...new Set(currentRows.map(r => r.region))].filter(Boolean).sort();
+  regions.forEach(r => {
+    const opt = document.createElement('option'); opt.value = r; opt.textContent = r;
+    regionFilterEl.appendChild(opt);
+  });
   Object.keys(CLASS_HEX).forEach(c => {
     const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
     classFilterEl.appendChild(opt);
@@ -491,21 +700,36 @@ function initUI() {
   document.getElementById('subtitle').textContent =
     `Live SharePoint feed \u00b7 ${weeksIndex.length} weeks tracked`;
 
-  clientFilterEl.addEventListener('change', e => { state.client = e.target.value; state.page = 1; rerenderAll(); });
+  clientFilterEl.addEventListener('change', e => { state.client = e.target.value; state.page = 1; feedbackPage = 1; rerenderAll(); });
   weekFilterEl.addEventListener('change', async e => {
-    state.week = e.target.value; state.page = 1;
+    state.week = e.target.value; state.page = 1; feedbackPage = 1;
     document.getElementById('authStatus').textContent = `Loading week ${state.week}...`;
     const token = await getGraphToken();
     await loadWeek(token, state.week);
     document.getElementById('authStatus').textContent = 'Connected';
     rerenderAll();
   });
-  bannerFilterEl.addEventListener('change', e => { state.banner = e.target.value; state.page = 1; renderTable(); });
-  classFilterEl.addEventListener('change', e => { state.classification = e.target.value; state.page = 1; renderTable(); });
-  statusFilterEl.addEventListener('change', e => { state.status = e.target.value; state.page = 1; renderTable(); });
-  document.getElementById('searchBox').addEventListener('input', e => { state.search = e.target.value; state.page = 1; renderTable(); });
+  bannerFilterEl.addEventListener('change', e => { state.banner = e.target.value; state.page = 1; feedbackPage = 1; rerenderAll(); });
+  regionFilterEl.addEventListener('change', e => { state.region = e.target.value; state.page = 1; feedbackPage = 1; rerenderAll(); });
+  classFilterEl.addEventListener('change', e => { state.classification = e.target.value; state.page = 1; feedbackPage = 1; rerenderAll(); });
+  statusFilterEl.addEventListener('change', e => { state.status = e.target.value; state.page = 1; feedbackPage = 1; rerenderAll(); });
+  document.getElementById('searchBox').addEventListener('input', e => { state.search = e.target.value; state.page = 1; feedbackPage = 1; renderTable(); renderFeedbackFeed(); });
   document.getElementById('prevPage').addEventListener('click', () => { if (state.page>1){ state.page--; renderTable(); } });
   document.getElementById('nextPage').addEventListener('click', () => { state.page++; renderTable(); });
+  document.getElementById('feedbackPrevPage').addEventListener('click', () => { if (feedbackPage>1){ feedbackPage--; renderFeedbackFeed(); } });
+  document.getElementById('feedbackNextPage').addEventListener('click', () => { feedbackPage++; renderFeedbackFeed(); });
+  document.getElementById('skuSearchBox').addEventListener('input', e => { skuSearch = e.target.value; renderSkuInsights(); });
+  document.getElementById('storeSelector').addEventListener('change', () => { renderStoreDeepDive(); });
+  document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
 
   rerenderAll();
 }
@@ -528,6 +752,7 @@ function filteredRows(){
   return currentWeekRows().filter(r => {
     if (state.client !== '__all__' && r.client !== state.client) return false;
     if (state.banner !== '__all__' && r.banner !== state.banner) return false;
+    if (state.region !== '__all__' && r.region !== state.region) return false;
     if (state.classification !== '__all__' && r.classification !== state.classification) return false;
     if (state.status !== '__all__' && r.actionStatus !== state.status) return false;
     if (state.search) {
@@ -539,61 +764,293 @@ function filteredRows(){
   });
 }
 
-function renderKpis(){
-  const weekRows = currentWeekRows().filter(r => state.client === '__all__' || r.client === state.client);
-  const counts = {};
-  weekRows.forEach(r => { counts[r.classification] = (counts[r.classification]||0) + 1; });
-  const total = weekRows.length;
-  const pct = (n) => total ? Math.round((n/total)*1000)/10 : 0;
-  const actionedCount = weekRows.filter(r => (r.actionStatus||'').includes('Actioned') || r.actionStatus==='Fixed' || r.actionStatus==='Completed').length;
-  const pctActioned = total ? Math.round((actionedCount/total)*1000)/10 : 0;
+const ICONS = {
+  list: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+  check: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  clock: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  percent: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>`,
+  store: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M4 9v9a1 1 0 001 1h14a1 1 0 001-1V9"/></svg>`,
+  box: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+};
+
+function getPrevWeekKey(){
+  const idx = weeksIndex.findIndex(w => w.week === state.week);
+  if (idx <= 0) return null;
+  return weeksIndex[idx-1].week;
+}
+function getPrevWeekFilteredRows(){
+  const pk = getPrevWeekKey();
+  if (!pk) return null;
+  const prevRows = weekRowCache[pk];
+  if (!prevRows) return null; // not loaded yet - ensurePrevWeekLoaded() fetches it in the background
+  return prevRows.filter(r => {
+    if (state.client !== '__all__' && r.client !== state.client) return false;
+    if (state.banner !== '__all__' && r.banner !== state.banner) return false;
+    if (state.region !== '__all__' && r.region !== state.region) return false;
+    if (state.classification !== '__all__' && r.classification !== state.classification) return false;
+    if (state.status !== '__all__' && r.actionStatus !== state.status) return false;
+    return true;
+  });
+}
+async function ensurePrevWeekLoaded(){
+  const pk = getPrevWeekKey();
+  if (!pk || weekRowCache[pk]) return;
+  try {
+    const token = await getGraphToken();
+    await loadWeek(token, pk);
+    rerenderAll(); // re-render once the prior week's data is in, so deltas populate
+  } catch (e) {
+    console.warn('Could not load prior week for comparison', e);
+  }
+}
+function deltaHtml(curr, prev, isPct){
+  if (prev === null || prev === undefined) return `<span class="delta" style="color:var(--text-400);">vs prior week: n/a</span>`;
+  const diff = curr - prev;
+  if (diff === 0) return `<span class="delta" style="color:var(--text-400);">flat vs prior week</span>`;
+  const up = diff > 0;
+  const arrow = up ? '\u2191' : '\u2193';
+  const cls = up ? 'up' : 'down';
+  const display = isPct ? `${Math.abs(diff).toFixed(1)} pts` : Math.abs(diff).toLocaleString();
+  return `<span class="delta ${cls}">${arrow} ${display} vs prior week</span>`;
+}
+
+function renderIconKpiRow(){
+  const rows = filteredRows();
+  const total = rows.length;
+  const actioned = rows.filter(r => isActioned(r.actionStatus)).length;
+  const pending = rows.filter(r => isPending(r.actionStatus)).length;
+  const completionRate = total ? Math.round((actioned/total)*1000)/10 : 0;
+  const stores = new Set(rows.map(r=>r.store)).size;
+  const skus = new Set(rows.map(r=>r.article)).size;
+
+  const prevRows = getPrevWeekFilteredRows();
+  let prev = null;
+  if (prevRows) {
+    const pActioned = prevRows.filter(r=>isActioned(r.actionStatus)).length;
+    const pPending = prevRows.filter(r=>isPending(r.actionStatus)).length;
+    prev = {
+      total: prevRows.length, actioned: pActioned, pending: pPending,
+      rate: prevRows.length ? Math.round((pActioned/prevRows.length)*1000)/10 : 0,
+      stores: new Set(prevRows.map(r=>r.store)).size, skus: new Set(prevRows.map(r=>r.article)).size,
+    };
+  } else {
+    ensurePrevWeekLoaded(); // fire and forget - will trigger a re-render once loaded
+  }
 
   const cards = [
-    {label: 'Lines tracked (this week)', value: total.toLocaleString(), cls:''},
-    {label: '% actioned', value: pctActioned + '%', cls:'c-optimal'},
-    {label: 'Out of stock', value: (counts['Out of Stock']||0).toLocaleString() + ' \u00b7 ' + pct(counts['Out of Stock']||0) + '%', cls:'c-oos'},
-    {label: 'Overstock', value: (counts['Overstock']||0).toLocaleString() + ' \u00b7 ' + pct(counts['Overstock']||0) + '%', cls:'c-overstock'},
-    {label: 'Understock', value: (counts['Understock']||0).toLocaleString() + ' \u00b7 ' + pct(counts['Understock']||0) + '%', cls:'c-understock'},
-    {label: 'Optimal', value: (counts['Optimal']||0).toLocaleString() + ' \u00b7 ' + pct(counts['Optimal']||0) + '%', cls:'c-optimal'},
+    {label:'Total Tasks', value:total.toLocaleString(), icon:ICONS.list, color:'#2c6fb0', delta: deltaHtml(total, prev?prev.total:null, false)},
+    {label:'Completed', value:actioned.toLocaleString(), icon:ICONS.check, color:'#1f9d6b', delta: deltaHtml(actioned, prev?prev.actioned:null, false)},
+    {label:'Pending', value:pending.toLocaleString(), icon:ICONS.clock, color:'#d9a72e', delta: deltaHtml(pending, prev?prev.pending:null, false)},
+    {label:'Completion Rate', value:completionRate+'%', icon:ICONS.percent, color:'#9b2fae', delta: deltaHtml(completionRate, prev?prev.rate:null, true)},
+    {label:'Stores Impacted', value:stores.toLocaleString(), icon:ICONS.store, color:'#2c8fae', delta: deltaHtml(stores, prev?prev.stores:null, false)},
+    {label:'SKUs Impacted', value:skus.toLocaleString(), icon:ICONS.box, color:'#f47920', delta: deltaHtml(skus, prev?prev.skus:null, false)},
   ];
-  document.getElementById('kpiRow').innerHTML = cards.map(c => `
-    <div class="kpi-card ${c.cls}"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>
+
+  document.getElementById('iconKpiRow').innerHTML = cards.map(c => `
+    <div class="icon-kpi-card">
+      <div class="icon-circle" style="background:${c.color}1a;color:${c.color};">${c.icon}</div>
+      <div>
+        <div class="label">${c.label}</div>
+        <div class="value">${c.value}</div>
+        ${c.delta}
+      </div>
+    </div>
   `).join('');
 }
 
-let trendChartInstance = null;
-function renderTrendChart(){
-  const byWeek = weeklyClassificationTotals();
-  const weeks = Object.keys(byWeek).sort();
+function renderActionedPendingBars(){
+  const rows = filteredRows();
   const classes = Object.keys(CLASS_HEX);
-  const datasets = classes.map(cls => ({
-    label: cls, data: weeks.map(w => byWeek[w][cls] || 0),
-    borderColor: CLASS_HEX[cls], backgroundColor: CLASS_HEX[cls] + '33',
-    fill: true, tension: 0.25, pointRadius: 0, borderWidth: 2,
-  }));
-  const ctx = document.getElementById('trendChart');
-  if (trendChartInstance) trendChartInstance.destroy();
-  trendChartInstance = new Chart(ctx, {
-    type: 'line', data: { labels: weeks, datasets },
-    options: {
-      responsive: true, interaction: { mode: 'index', intersect: false },
-      scales: {
-        x: { stacked: true, ticks: { maxRotation: 60, minRotation: 60, font: {size: 10} } },
-        y: { stacked: true, ticks: { font: {size: 11} } },
-      },
-      plugins: { legend: { display: false } },
+  const stats = classes.map(cls => {
+    const subset = rows.filter(r=>r.classification===cls);
+    const actionedN = subset.filter(r=>isActioned(r.actionStatus)).length;
+    return {cls, total: subset.length, actioned: actionedN, pending: subset.length - actionedN};
+  }).filter(s => s.total > 0);
+  const maxTotal = Math.max(1, ...stats.map(s=>s.total));
+  const container = document.getElementById('actionedPendingBars');
+  if (stats.length === 0) { container.innerHTML = `<div class="muted" style="padding:16px;text-align:center;">No rows match these filters.</div>`; return; }
+  container.innerHTML = stats.map(s => {
+    const actionedPct = (s.actioned/maxTotal)*100;
+    const pendingPct = (s.pending/maxTotal)*100;
+    return `<div class="bar-row">
+      <div class="bar-label">${s.cls}</div>
+      <div style="display:flex;align-items:center;">
+        <div class="bar-track" style="flex:1;">
+          <div class="bar-seg actioned" style="width:${actionedPct}%;"><span class="bar-seg-label">${s.actioned}</span></div>
+          <div class="bar-seg pending" style="width:${pendingPct}%;"><span class="bar-seg-label" style="color:var(--text-600);">${s.pending}</span></div>
+        </div>
+        <span class="bar-total">${s.total.toLocaleString()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderClassificationSummaryTable(){
+  const rows = filteredRows();
+  const classes = Object.keys(CLASS_HEX);
+  const body = document.getElementById('classSummaryBody');
+  const totals = {total:0, actioned:0, pending:0};
+  const lines = classes.map(cls => {
+    const subset = rows.filter(r=>r.classification===cls);
+    if (subset.length===0) return null;
+    const actionedN = subset.filter(r=>isActioned(r.actionStatus)).length;
+    const pendingN = subset.length - actionedN;
+    const rate = subset.length ? Math.round((actionedN/subset.length)*1000)/10 : 0;
+    const actionCounts = {};
+    subset.forEach(r=>{ const a=r.action||'Unknown'; actionCounts[a]=(actionCounts[a]||0)+1; });
+    const topAction = Object.entries(actionCounts).sort((a,b)=>b[1]-a[1])[0];
+    totals.total += subset.length; totals.actioned += actionedN; totals.pending += pendingN;
+    return `<tr><td>${cls}</td><td>${subset.length.toLocaleString()}</td><td>${actionedN.toLocaleString()}</td><td>${pendingN.toLocaleString()}</td><td>${rate}%</td><td>${topAction?topAction[0]:''}</td></tr>`;
+  }).filter(Boolean);
+  if (lines.length === 0) {
+    body.innerHTML = `<tr><td colspan="6" class="muted" style="padding:20px;text-align:center;">No rows match these filters.</td></tr>`;
+    return;
+  }
+  const totalRate = totals.total ? Math.round((totals.actioned/totals.total)*1000)/10 : 0;
+  body.innerHTML = lines.join('') + `<tr style="font-weight:700;border-top:2px solid var(--border);"><td>TOTAL</td><td>${totals.total.toLocaleString()}</td><td>${totals.actioned.toLocaleString()}</td><td>${totals.pending.toLocaleString()}</td><td>${totalRate}%</td><td>\u2014</td></tr>`;
+}
+
+let actionTakenChartInstance = null;
+function renderActionTakenChart(){
+  const rows = filteredRows();
+  const counts = {};
+  rows.filter(r => isActioned(r.actionStatus)).forEach(r => {
+    const a = r.action || 'Unknown';
+    counts[a] = (counts[a]||0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const totalActioned = sorted.reduce((s,[,n]) => s+n, 0);
+  const ctx = document.getElementById('actionTakenChart');
+  if (actionTakenChartInstance) actionTakenChartInstance.destroy();
+  const palette = ['#123a63','#2c8fae','#d9a72e','#f47920','#9b2fae','#1f9d6b','#c93b3b','#7c8aa0'];
+  if (!ctx || sorted.length === 0) return;
+  actionTakenChartInstance = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels: sorted.map(s=>s[0]), datasets:[{ data: sorted.map(s=>s[1]), backgroundColor: palette, borderWidth:0 }] },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}`}}},
+      cutout:'62%',
     },
   });
-  document.getElementById('trendLegend').innerHTML = classes.map(c =>
-    `<span><span class="legend-dot" style="background:${CLASS_HEX[c]}"></span>${c}</span>`
-  ).join('');
-  document.getElementById('trendTag').textContent =
-    (state.client === '__all__' ? 'all clients' : state.client) + ` \u00b7 full ${weeks.length}-week history`;
+  const tbody = document.getElementById('actionTakenTableBody');
+  if (!tbody) return;
+  if (sorted.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="muted" style="padding:12px;">No actioned rows.</td></tr>`; return; }
+  tbody.innerHTML = sorted.map(([action, count], i) => {
+    const pct = totalActioned ? Math.round((count/totalActioned)*1000)/10 : 0;
+    return `<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${palette[i]||'#8497a8'};margin-right:5px;vertical-align:middle;"></span>${action}</td>
+      <td>${count.toLocaleString()}</td><td>${pct}%</td></tr>`;
+  }).join('');
+}
+
+let top10BarChartInstance = null;
+function renderTop10BarChart(){
+  const rows = filteredRows();
+  const articleMap = {};
+  rows.forEach(r => {
+    const key = r.article || 'Unknown';
+    articleMap[key] = articleMap[key] || {completed:0};
+    if (isActioned(r.actionStatus)) articleMap[key].completed++;
+  });
+  const top10 = Object.entries(articleMap).sort((a,b)=>b[1].completed-a[1].completed).slice(0,10);
+  const ctx = document.getElementById('top10BarChart');
+  if (!ctx) return;
+  if (top10BarChartInstance) top10BarChartInstance.destroy();
+  top10BarChartInstance = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: top10.map(([art]) => art.length > 28 ? art.slice(0,28)+'...' : art),
+      datasets:[{ data: top10.map(([,g])=>g.completed), backgroundColor:'#123a63', borderRadius:3 }],
+    },
+    options:{
+      indexAxis:'y', responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{display:false}},
+        y:{ticks:{font:{size:9.5}},grid:{display:false}},
+      },
+    },
+  });
+}
+
+function renderManagerFollowUp(){
+  const rows = filteredRows();
+  const managerMap = {};
+  const regionMap = {};
+  rows.forEach(r => {
+    if (isPending(r.actionStatus)){
+      const m = r.manager || 'Unassigned';
+      managerMap[m] = (managerMap[m]||0) + 1;
+      const reg = r.region || 'Unknown';
+      regionMap[reg] = (regionMap[reg]||0) + 1;
+    }
+  });
+  const mgrs = Object.entries(managerMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const regs = Object.entries(regionMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const pendingList = document.getElementById('managerPendingList');
+  const regionList = document.getElementById('managerRegionList');
+  if (!pendingList || !regionList) return;
+  pendingList.innerHTML = mgrs.length === 0 ? `<div class="muted" style="font-size:11px;padding:8px 0;">No pending tasks.</div>` :
+    mgrs.map(([name, count], i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:11.5px;font-weight:600;">${i+1}. ${name}</span>
+      <span style="background:var(--orange-500);color:#fff;border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:700;">${count}</span>
+    </div>`).join('');
+  regionList.innerHTML = regs.length === 0 ? `<div class="muted" style="font-size:11px;padding:8px 0;">No pending tasks.</div>` :
+    regs.map(([reg, count], i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:11.5px;font-weight:600;">${i+1}. ${reg}</span>
+      <span style="background:var(--orange-500);color:#fff;border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:700;">${count}</span>
+    </div>`).join('');
+}
+
+function safeId(s){ return s.replace(/[^a-zA-Z0-9]/g, ''); }
+const sparkChartInstances = {};
+
+function renderTaskBreakdown(){
+  const byWeek = weeklyClassificationTotals(); // respects client filter, all 35 weeks
+  const weeks = Object.keys(byWeek).sort();
+  const currentRows = rowsIgnoring('classification'); // respects every other active filter for "this week" numbers
+  const totalForPct = currentRows.length;
+  const currentCounts = {};
+  currentRows.forEach(r => { currentCounts[r.classification] = (currentCounts[r.classification]||0) + 1; });
+
+  const classes = Object.keys(CLASS_HEX);
+  const grid = document.getElementById('taskBreakdownGrid');
+  grid.innerHTML = classes.map(cls => `
+    <div class="spark-card">
+      <div class="spark-head"><span class="spark-label">${cls}</span></div>
+      <div class="spark-value" id="spark-value-${safeId(cls)}">0</div>
+      <div class="spark-pct" id="spark-pct-${safeId(cls)}"></div>
+      <div class="spark-canvas-wrap"><canvas id="spark-canvas-${safeId(cls)}"></canvas></div>
+    </div>
+  `).join('');
+
+  classes.forEach(cls => {
+    const id = safeId(cls);
+    const count = currentCounts[cls] || 0;
+    const pct = totalForPct ? Math.round((count/totalForPct)*1000)/10 : 0;
+    document.getElementById(`spark-value-${id}`).textContent = count.toLocaleString();
+    document.getElementById(`spark-pct-${id}`).textContent = `${pct}% of all lines this week`;
+
+    const data = weeks.map(w => byWeek[w][cls] || 0);
+    const ctx = document.getElementById(`spark-canvas-${id}`);
+    if (sparkChartInstances[id]) sparkChartInstances[id].destroy();
+    sparkChartInstances[id] = new Chart(ctx, {
+      type: 'line',
+      data: { labels: weeks, datasets: [{ data, borderColor: CLASS_HEX[cls], backgroundColor: CLASS_HEX[cls] + '22', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } },
+        elements: { line: { borderJoinStyle: 'round' } },
+      },
+    });
+  });
 }
 
 let statusChartInstance = null;
 function renderStatusChart(){
-  const weekRows = currentWeekRows().filter(r => state.client === '__all__' || r.client === state.client);
+  const weekRows = filteredRows();
   const counts = {};
   weekRows.forEach(r => { const s = r.actionStatus || 'Unknown'; counts[s] = (counts[s]||0) + 1; });
   const labels = Object.keys(counts);
@@ -632,7 +1089,7 @@ function renderTable(){
         <td>${r.week||''}</td><td>${r.client||''}</td><td>${r.banner||''}</td><td>${r.region||''}</td>
         <td>${r.store||''}</td><td>${r.article||''}</td><td>${r.dcSoh ?? ''}</td><td>${r.storeSoh ?? ''}</td>
         <td>${classBadge(r.classification)}</td><td>${r.action||''}</td><td>${statusBadge(r.actionStatus)}</td>
-        <td>${r.rep||''}</td><td>${imgs}</td>
+        <td>${r.rep||''}</td><td>${r.feedback||'<span class="muted">\u2014</span>'}</td><td>${r.actionComment||'<span class="muted">\u2014</span>'}</td><td>${imgs}</td>
       </tr>`;
     }).join('');
   }
@@ -645,8 +1102,430 @@ function renderTable(){
 
 function renderWeekNotice(){ document.getElementById('weekNotice').innerHTML = ''; }
 
+// ---------- Banner / Region analytics ----------
+let bannerChartInstance = null;
+let regionChartInstance = null;
+
+function rowsIgnoring(filterKey){
+  // Same as filteredRows() but skip one specific filter dimension, so the
+  // "by banner" chart isn't collapsed to a single bar when a banner is selected.
+  return currentWeekRows().filter(r => {
+    if (filterKey !== 'client' && state.client !== '__all__' && r.client !== state.client) return false;
+    if (filterKey !== 'banner' && state.banner !== '__all__' && r.banner !== state.banner) return false;
+    if (filterKey !== 'region' && state.region !== '__all__' && r.region !== state.region) return false;
+    if (filterKey !== 'classification' && state.classification !== '__all__' && r.classification !== state.classification) return false;
+    if (filterKey !== 'status' && state.status !== '__all__' && r.actionStatus !== state.status) return false;
+    return true;
+  });
+}
+
+function groupCount(rows, keyFn){
+  const counts = {};
+  rows.forEach(r => { const k = keyFn(r) || 'Unknown'; counts[k] = (counts[k]||0) + 1; });
+  return counts;
+}
+
+function renderBannerRegionAnalytics(){
+  const bannerRows = rowsIgnoring('banner');
+  const regionRows = rowsIgnoring('region');
+
+  const bannerCounts = groupCount(bannerRows, r => r.banner);
+  const bannerLabels = Object.keys(bannerCounts).sort((a,b) => bannerCounts[b]-bannerCounts[a]).slice(0, 15);
+  const ctxB = document.getElementById('bannerChart');
+  if (bannerChartInstance) bannerChartInstance.destroy();
+  bannerChartInstance = new Chart(ctxB, {
+    type: 'bar',
+    data: { labels: bannerLabels, datasets: [{ data: bannerLabels.map(l => bannerCounts[l]), backgroundColor: '#f47920' }] },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { font: { size: 10.5 } } }, y: { ticks: { font: { size: 10.5 } } } } },
+  });
+  document.getElementById('bannerAnalyticsTag').textContent = `top ${bannerLabels.length} \u00b7 week ${state.week}`;
+
+  const regionCounts = groupCount(regionRows, r => r.region);
+  const regionLabels = Object.keys(regionCounts).sort((a,b) => regionCounts[b]-regionCounts[a]);
+  const ctxR = document.getElementById('regionChart');
+  if (regionChartInstance) regionChartInstance.destroy();
+  regionChartInstance = new Chart(ctxR, {
+    type: 'bar',
+    data: { labels: regionLabels, datasets: [{ data: regionLabels.map(l => regionCounts[l]), backgroundColor: '#123a63' }] },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { font: { size: 10.5 } } }, y: { ticks: { font: { size: 10.5 } } } } },
+  });
+  document.getElementById('regionAnalyticsTag').textContent = `week ${state.week}`;
+
+  // Banner x Region breakdown table (optional - only rendered if the element exists)
+  const tbody = document.getElementById('bannerRegionTableBody');
+  if (!tbody) return;
+  const rows = filteredRows();
+  const grid = {};
+  rows.forEach(r => {
+    const key = `${r.banner||'Unknown'}\u0001${r.region||'Unknown'}`;
+    grid[key] = grid[key] || { total: 0, oos: 0, over: 0, under: 0, noSales: 0, optimal: 0 };
+    const g = grid[key];
+    g.total++;
+    if (r.classification === 'Out of Stock') g.oos++;
+    else if (r.classification === 'Overstock') g.over++;
+    else if (r.classification === 'Understock') g.under++;
+    else if (r.classification === 'No Sales (Idle Stock)' || r.classification === 'No Sales (Dead Stock)') g.noSales++;
+    else if (r.classification === 'Optimal') g.optimal++;
+  });
+  const entries = Object.entries(grid).sort((a,b) => b[1].total - a[1].total).slice(0, 100);
+  if (entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="muted" style="padding:20px;text-align:center;">No rows match these filters.</td></tr>`;
+  } else {
+    tbody.innerHTML = entries.map(([key, g]) => {
+      const [banner, region] = key.split('\u0001');
+      return `<tr><td>${banner}</td><td>${region}</td><td>${g.total.toLocaleString()}</td>
+        <td>${g.oos.toLocaleString()}</td><td>${g.over.toLocaleString()}</td><td>${g.under.toLocaleString()}</td>
+        <td>${g.noSales.toLocaleString()}</td><td>${g.optimal.toLocaleString()}</td></tr>`;
+    }).join('');
+  }
+}
+
+function renderTop10Actioned(){
+  const rows = filteredRows();
+  const articleMap = {};
+  rows.forEach(r => {
+    const key = r.article || 'Unknown';
+    articleMap[key] = articleMap[key] || {completed:0, pending:0, issues:{}};
+    if (isActioned(r.actionStatus)) articleMap[key].completed++;
+    else articleMap[key].pending++;
+    const cls = r.classification || 'Unknown';
+    articleMap[key].issues[cls] = (articleMap[key].issues[cls]||0) + 1;
+  });
+  const sorted = Object.entries(articleMap).sort((a,b) => b[1].completed - a[1].completed).slice(0,10);
+  const body = document.getElementById('top10ActionedBody');
+  if (!body) return;
+  const clsColors = {'Out of Stock':'#c93b3b','Overstock':'#d9a72e','Understock':'#2c8fae','No Sales (Idle Stock)':'#7c8aa0','Negative SOH':'#9b2fae'};
+  if (sorted.length === 0) { body.innerHTML = `<tr><td colspan="5" class="muted" style="padding:16px;text-align:center;">No rows match these filters.</td></tr>`; return; }
+  body.innerHTML = sorted.map(([art, g], i) => {
+    const topIssue = Object.entries(g.issues).sort((a,b)=>b[1]-a[1])[0];
+    const col = topIssue ? (clsColors[topIssue[0]]||'#8497a8') : '#8497a8';
+    return `<tr><td>${i+1}</td><td>${art}</td><td>${g.completed}</td><td>${g.pending}</td>
+      <td><span style="color:${col};font-weight:600;">${topIssue?topIssue[0]:''}</span></td></tr>`;
+  }).join('');
+  document.getElementById('top10ActionedTag').textContent = `week ${state.week}`;
+}
+
+function renderTop10ByReasonCode(){
+  const rows = filteredRows();
+  const articleMap = {};
+  rows.forEach(r => {
+    const key = r.article || 'Unknown';
+    articleMap[key] = articleMap[key] || {total:0, reasons:{}};
+    articleMap[key].total++;
+    const rc = r.reasonCode || 'None';
+    articleMap[key].reasons[rc] = (articleMap[key].reasons[rc]||0) + 1;
+  });
+  const totalAll = rows.length || 1;
+  const sorted = Object.entries(articleMap).sort((a,b) => b[1].total - a[1].total).slice(0,10);
+  const body = document.getElementById('top10ReasonBody');
+  if (!body) return;
+  if (sorted.length === 0) { body.innerHTML = `<tr><td colspan="5" class="muted" style="padding:16px;text-align:center;">No rows match these filters.</td></tr>`; return; }
+  body.innerHTML = sorted.map(([art, g], i) => {
+    const topRc = Object.entries(g.reasons).sort((a,b)=>b[1]-a[1])[0];
+    const pct = Math.round((g.total/totalAll)*1000)/10;
+    return `<tr><td>${i+1}</td><td>${art}</td><td>${topRc?topRc[0]:''}</td><td>${g.total}</td><td>${pct}%</td></tr>`;
+  }).join('');
+}
+
+function renderWhatWasWrong(){
+  const rows = filteredRows();
+  const catMap = {};
+  rows.forEach(r => {
+    const cat = r.category || 'Uncategorised';
+    catMap[cat] = catMap[cat] || {oos:0,over:0,under:0,noSales:0,neg:0,total:0};
+    catMap[cat].total++;
+    const cls = r.classification || '';
+    if (cls==='Out of Stock') catMap[cat].oos++;
+    else if (cls==='Overstock') catMap[cat].over++;
+    else if (cls==='Understock') catMap[cat].under++;
+    else if (cls.includes('No Sales')) catMap[cat].noSales++;
+    else if (cls==='Negative SOH') catMap[cat].neg++;
+  });
+  const body = document.getElementById('whatWrongBody');
+  if (!body) return;
+  const sorted = Object.entries(catMap).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+  if (sorted.length === 0) { body.innerHTML = `<tr><td colspan="7" class="muted" style="padding:16px;text-align:center;">No data.</td></tr>`; return; }
+  const totals = {oos:0,over:0,under:0,noSales:0,neg:0,total:0};
+  body.innerHTML = sorted.map(([cat, g]) => {
+    totals.oos+=g.oos;totals.over+=g.over;totals.under+=g.under;totals.noSales+=g.noSales;totals.neg+=g.neg;totals.total+=g.total;
+    return `<tr><td>${cat}</td><td>${g.oos||''}</td><td>${g.over||''}</td><td>${g.under||''}</td><td>${g.noSales||''}</td><td>${g.neg||''}</td><td><strong>${g.total}</strong></td></tr>`;
+  }).join('') + `<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Total</td><td>${totals.oos}</td><td>${totals.over}</td><td>${totals.under}</td><td>${totals.noSales}</td><td>${totals.neg}</td><td>${totals.total}</td></tr>`;
+}
+
+
+
+// ---------- Rep & Manager Performance ----------
+function isActioned(status){
+  return (status||'').includes('Actioned') || status === 'Fixed' || status === 'Completed';
+}
+function isPending(status){ return (status||'').includes('Pending'); }
+function isEscalated(status){ return (status||'').includes('Escalated'); }
+
+function buildLeaderboard(rows, keyFn){
+  const groups = {};
+  rows.forEach(r => {
+    const k = keyFn(r) || 'Unassigned';
+    groups[k] = groups[k] || { total: 0, pending: 0, escalated: 0, actioned: 0 };
+    const g = groups[k];
+    g.total++;
+    if (isPending(r.actionStatus)) g.pending++;
+    if (isEscalated(r.actionStatus)) g.escalated++;
+    if (isActioned(r.actionStatus)) g.actioned++;
+  });
+  return Object.entries(groups).map(([name, g]) => ({
+    name, ...g, pctActioned: g.total ? Math.round((g.actioned/g.total)*1000)/10 : 0,
+  })).sort((a,b) => b.pending - a.pending);
+}
+
+function renderLeaderboardTable(tbodyId, entries){
+  const tbody = document.getElementById(tbodyId);
+  if (entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="muted" style="padding:20px;text-align:center;">No rows match these filters.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = entries.slice(0, 100).map(e => `
+    <tr><td>${e.name}</td><td>${e.total.toLocaleString()}</td>
+      <td>${e.pending.toLocaleString()}</td><td>${e.escalated.toLocaleString()}</td>
+      <td>${e.pctActioned}%</td></tr>
+  `).join('');
+}
+
+function renderRepManagerPerformance(){
+  const rows = filteredRows();
+  const reps = buildLeaderboard(rows, r => r.rep);
+  const managers = buildLeaderboard(rows, r => r.manager);
+
+  renderLeaderboardTable('repLeaderboardBody', reps);
+  renderLeaderboardTable('managerLeaderboardBody', managers);
+  document.getElementById('repLeaderboardTag').textContent = `${reps.length} reps \u00b7 week ${state.week}`;
+  document.getElementById('managerLeaderboardTag').textContent = `${managers.length} managers \u00b7 week ${state.week}`;
+
+  const totalPending = rows.filter(r => isPending(r.actionStatus)).length;
+  const totalEscalated = rows.filter(r => isEscalated(r.actionStatus)).length;
+  const totalActioned = rows.filter(r => isActioned(r.actionStatus)).length;
+  const pctActioned = rows.length ? Math.round((totalActioned/rows.length)*1000)/10 : 0;
+
+  const cards = [
+    { label: 'Reps tracked', value: reps.length.toLocaleString(), cls: '' },
+    { label: 'Managers tracked', value: managers.length.toLocaleString(), cls: '' },
+    { label: 'Pending tasks', value: totalPending.toLocaleString(), cls: 'c-overstock' },
+    { label: 'Escalated tasks', value: totalEscalated.toLocaleString(), cls: 'c-oos' },
+  ];
+  document.getElementById('repManagerKpiRow').innerHTML = cards.map(c => `
+    <div class="kpi-card ${c.cls}"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>
+  `).join('');
+}
+
+// ---------- SKU Insights ----------
+let topSkuChartInstance = null;
+let reasonCodeChartInstance = null;
+let skuSearch = '';
+
+function renderSkuInsights(){
+  const rows = filteredRows();
+  const skuGroups = {};
+  rows.forEach(r => {
+    const key = r.article || 'Unknown';
+    skuGroups[key] = skuGroups[key] || { total: 0, oos: 0, over: 0, under: 0, noSales: 0, optimal: 0, barcode: r.barcode, actions: {} };
+    const g = skuGroups[key];
+    g.total++;
+    if (r.classification === 'Out of Stock') g.oos++;
+    else if (r.classification === 'Overstock') g.over++;
+    else if (r.classification === 'Understock') g.under++;
+    else if (r.classification === 'No Sales (Idle Stock)' || r.classification === 'No Sales (Dead Stock)') g.noSales++;
+    else if (r.classification === 'Optimal') g.optimal++;
+    const a = r.action || 'Unknown';
+    g.actions[a] = (g.actions[a]||0) + 1;
+  });
+
+  const skuEntries = Object.entries(skuGroups);
+  const problemCount = (g) => g.oos + g.over + g.under + g.noSales;
+
+  // KPI cards
+  const totalSkus = skuEntries.length;
+  const problemSkus = skuEntries.filter(([,g]) => problemCount(g) > 0).length;
+  const reasonCounts = {};
+  rows.forEach(r => { const rc = r.reasonCode || 'None'; reasonCounts[rc] = (reasonCounts[rc]||0) + 1; });
+  const topReason = Object.entries(reasonCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('skuKpiRow').innerHTML = [
+    { label: 'SKUs tracked', value: totalSkus.toLocaleString(), cls: '' },
+    { label: 'SKUs with issues', value: problemSkus.toLocaleString(), cls: 'c-overstock' },
+    { label: 'Total lines', value: rows.length.toLocaleString(), cls: '' },
+    { label: 'Top reason code', value: topReason ? topReason[0] : '\u2014', cls: 'c-oos' },
+  ].map(c => `<div class="kpi-card ${c.cls}"><div class="label">${c.label}</div><div class="value" style="font-size:18px;">${c.value}</div></div>`).join('');
+
+  // Top problem SKUs chart
+  const topSkus = skuEntries.map(([name, g]) => [name, problemCount(g)]).sort((a,b)=>b[1]-a[1]).slice(0, 15);
+  const ctx = document.getElementById('topSkuChart');
+  if (topSkuChartInstance) topSkuChartInstance.destroy();
+  topSkuChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: topSkus.map(s=>s[0]), datasets: [{ data: topSkus.map(s=>s[1]), backgroundColor: '#c93b3b' }] },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display:false } },
+      scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 9.5 } } } } },
+  });
+  document.getElementById('topSkuTag').textContent = `top ${topSkus.length} \u00b7 week ${state.week}`;
+
+  // SKU by reason code chart
+  const reasonLabels = Object.keys(reasonCounts).sort((a,b)=>reasonCounts[b]-reasonCounts[a]).slice(0, 12);
+  const ctx2 = document.getElementById('reasonCodeChart');
+  if (reasonCodeChartInstance) reasonCodeChartInstance.destroy();
+  reasonCodeChartInstance = new Chart(ctx2, {
+    type: 'bar',
+    data: { labels: reasonLabels, datasets: [{ data: reasonLabels.map(l=>reasonCounts[l]), backgroundColor: '#f47920' }] },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display:false } },
+      scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } } },
+  });
+
+  // SKU drilldown table
+  let filtered = skuEntries;
+  if (skuSearch) {
+    const s = skuSearch.toLowerCase();
+    filtered = filtered.filter(([name, g]) => name.toLowerCase().includes(s) || String(g.barcode||'').includes(s));
+  }
+  filtered = filtered.sort((a,b) => problemCount(b[1]) - problemCount(a[1])).slice(0, 200);
+  const body = document.getElementById('skuDrilldownBody');
+  if (filtered.length === 0) {
+    body.innerHTML = `<tr><td colspan="9" class="muted" style="padding:20px;text-align:center;">No SKUs match these filters.</td></tr>`;
+  } else {
+    body.innerHTML = filtered.map(([name, g]) => {
+      const topAction = Object.entries(g.actions).sort((a,b)=>b[1]-a[1])[0];
+      return `<tr><td>${name}</td><td>${g.barcode||''}</td><td>${g.total.toLocaleString()}</td>
+        <td>${g.oos}</td><td>${g.over}</td><td>${g.under}</td><td>${g.noSales}</td><td>${g.optimal}</td>
+        <td>${topAction ? topAction[0] : ''}</td></tr>`;
+    }).join('');
+  }
+  document.getElementById('skuDrilldownTag').textContent = `${filtered.length.toLocaleString()} of ${totalSkus.toLocaleString()} SKUs`;
+}
+
+// ---------- Store Deep Dive ----------
+let storeSelectorPopulated = false;
+
+function populateStoreSelector(){
+  const sel = document.getElementById('storeSelector');
+  const rows = filteredRows();
+  const stores = [...new Set(rows.map(r => r.store))].filter(Boolean).sort();
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select a store...</option>' + stores.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (stores.includes(current)) sel.value = current;
+}
+
+function renderStoreDeepDive(){
+  populateStoreSelector();
+  const sel = document.getElementById('storeSelector');
+  const storeName = sel.value;
+  const content = document.getElementById('storeDeepDiveContent');
+  if (!storeName) {
+    content.innerHTML = `<div class="panel muted" style="text-align:center;padding:30px;">Select a store above to see its task list and images.</div>`;
+    return;
+  }
+  const rows = filteredRows().filter(r => r.store === storeName);
+  const images = [];
+  rows.forEach(r => {
+    [['image', r.image], ['image2', r.image2], ['systemImage', r.systemImage], ['piImage', r.piImage]].forEach(([label, url]) => {
+      if (url) images.push({ url, label, article: r.article });
+    });
+  });
+
+  content.innerHTML = `
+    <div class="panel">
+      <h2>${storeName} \u2014 task list <span class="tag">${rows.length.toLocaleString()} lines \u00b7 week ${state.week}</span></h2>
+      <div class="table-scroll" style="max-height:420px;">
+        <table>
+          <thead><tr><th>Article</th><th>DC SOH</th><th>Store SOH</th><th>Classification</th><th>Action</th><th>Status</th><th>Rep</th></tr></thead>
+          <tbody>
+            ${rows.length === 0 ? `<tr><td colspan="7" class="muted" style="padding:20px;text-align:center;">No rows for this store under current filters.</td></tr>` :
+              rows.map(r => `<tr><td>${r.article||''}</td><td>${r.dcSoh??''}</td><td>${r.storeSoh??''}</td>
+                <td>${classBadge(r.classification)}</td><td>${r.action||''}</td><td>${statusBadge(r.actionStatus)}</td><td>${r.rep||''}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Image gallery <span class="tag">${images.length} image${images.length===1?'':'s'}</span></h2>
+      ${images.length === 0 ? `<div class="muted" style="padding:20px;text-align:center;">No images attached for this store.</div>` :
+        `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+          ${images.map(img => `
+            <a href="${img.url}" target="_blank" style="display:block;border:1px solid var(--border);border-radius:8px;padding:8px;text-decoration:none;color:var(--text-900);font-size:11px;">
+              <div style="background:var(--bg);border-radius:6px;height:90px;display:flex;align-items:center;justify-content:center;color:var(--text-400);font-size:10px;margin-bottom:6px;">${img.label}</div>
+              <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${img.article||''}</div>
+            </a>
+          `).join('')}
+        </div>`}
+    </div>
+  `;
+}
+
+// ---------- CSV export ----------
+function exportCsv(){
+  const rows = filteredRows();
+  if (rows.length === 0) { alert('No rows to export under current filters.'); return; }
+  const cols = ['week','client','banner','region','store','article','barcode','dcSoh','storeSoh','classification','action','actionStatus','rep','manager','feedback','actionComment'];
+  const escape = (v) => {
+    if (v === null || v === undefined) return '';
+    const s = String(v).replace(/"/g, '""');
+    return /[,"\n]/.test(s) ? `"${s}"` : s;
+  };
+  const lines = [cols.join(',')];
+  rows.forEach(r => lines.push(cols.map(c => escape(r[c])).join(',')));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `stockfix_export_${state.week}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+let feedbackPage = 1;
+const FEEDBACK_PAGE_SIZE = 20;
+
+function feedbackRows(){
+  return filteredRows().filter(r => (r.feedback && r.feedback.trim()) || (r.actionComment && r.actionComment.trim()));
+}
+
+function renderFeedbackFeed(){
+  const rows = feedbackRows();
+  const totalPages = Math.max(1, Math.ceil(rows.length / FEEDBACK_PAGE_SIZE));
+  if (feedbackPage > totalPages) feedbackPage = totalPages;
+  const start = (feedbackPage - 1) * FEEDBACK_PAGE_SIZE;
+  const pageRows = rows.slice(start, start + FEEDBACK_PAGE_SIZE);
+
+  const list = document.getElementById('feedbackList');
+  if (pageRows.length === 0) {
+    list.innerHTML = `<div class="muted" style="padding:20px;text-align:center;">No feedback or comments match these filters.</div>`;
+  } else {
+    list.innerHTML = pageRows.map(r => `
+      <div class="feedback-item">
+        <div class="fb-head">
+          <span class="fb-store">${r.store||''} \u00b7 ${r.article||''}</span>
+          <span>${r.rep||'Unknown rep'} \u00b7 ${r.week||''} \u00b7 ${statusBadge(r.actionStatus)}</span>
+        </div>
+        <div class="fb-body">
+          ${r.feedback ? `<div><span class="fb-label">Feedback</span>${r.feedback}</div>` : ''}
+          ${r.actionComment ? `<div style="margin-top:4px;"><span class="fb-label">Action taken</span>${r.actionComment}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('feedbackPagerInfo').textContent =
+    rows.length ? `Showing ${start+1}-${Math.min(start+FEEDBACK_PAGE_SIZE, rows.length)} of ${rows.length.toLocaleString()} comments` : '';
+  document.getElementById('feedbackPrevPage').disabled = feedbackPage <= 1;
+  document.getElementById('feedbackNextPage').disabled = feedbackPage >= totalPages;
+  document.getElementById('feedbackTag').textContent = `${rows.length.toLocaleString()} comments \u00b7 week ${state.week}`;
+}
+
 function rerenderAll(){
-  renderKpis(); renderTrendChart(); renderStatusChart(); renderWeekNotice(); renderTable();
+  renderIconKpiRow(); renderTaskBreakdown(); renderWeekNotice(); renderTable();
+  renderBannerRegionAnalytics(); renderFeedbackFeed();
+  renderRepManagerPerformance(); renderSkuInsights(); renderStoreDeepDive();
+  renderActionedPendingBars(); renderClassificationSummaryTable();
+  renderActionTakenChart(); renderTop10BarChart();
+  renderTop10Actioned(); renderTop10ByReasonCode(); renderManagerFollowUp();
 }
 
 // Auto-resume session if already signed in (e.g. page refresh)
