@@ -146,6 +146,10 @@
     margin:2px 0 1px;line-height:1.1;
   }
   .spark-card .spark-pct{font-size:9px;color:var(--text-400);margin-bottom:3px;}
+  .spark-card{cursor:pointer;}
+  .spark-card:hover{border-color:var(--orange-500);box-shadow:0 2px 8px rgba(15,31,46,.08);}
+  .spark-selected{font-size:9px;color:var(--navy-700);font-weight:700;margin-top:3px;line-height:1.15;}
+  .spark-click-hint{font-size:8.5px;color:var(--text-400);margin-top:2px;}
   .spark-canvas-wrap{position:relative;height:30px;width:100%;}
   .spark-canvas-wrap canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important;}
 
@@ -168,6 +172,13 @@
   /* ── GRIDS ── */
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .overview-action-grid{display:grid;grid-template-columns:1.2fr .78fr 1.2fr;gap:8px;align-items:stretch;}
+  .overview-action-grid .panel{margin-bottom:8px;}
+  .compact-donut-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .compact-donut-wrap canvas{max-height:142px!important;}
+  .compact-action-table table{font-size:10.5px;}
+  .compact-action-table thead th{font-size:9.5px;padding:5px 6px;}
+  .compact-action-table tbody td{font-size:10.5px;padding:4px 6px;}
 
   /* ── TABLES ── */
   table{width:100%;border-collapse:collapse;font-size:11.5px;}
@@ -198,6 +209,70 @@
   .bar-seg.pending{background:#cdd6e0;}
   .bar-seg .bar-seg-label{font-size:9px;color:#fff;padding-left:4px;font-weight:600;white-space:nowrap;}
   .bar-row .bar-total{font-size:10px;color:var(--text-600);margin-left:5px;white-space:nowrap;}
+
+
+
+  /* ── VERTICAL ACTIONED VS PENDING COLUMNS ── */
+  .vertical-action-chart{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(78px,1fr));
+    gap:10px;
+    align-items:end;
+    height:185px;
+    padding:8px 6px 2px;
+  }
+  .vertical-action-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    min-width:0;
+    height:100%;
+  }
+  .vertical-action-total{
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--navy-900);
+    margin-bottom:4px;
+    white-space:nowrap;
+  }
+  .vertical-action-bar{
+    width:44px;
+    max-width:70%;
+    min-height:8px;
+    border-radius:5px 5px 3px 3px;
+    overflow:hidden;
+    background:#eef2f6;
+    display:flex;
+    flex-direction:column-reverse;
+    box-shadow:inset 0 0 0 1px rgba(6,26,46,.08);
+  }
+  .vertical-action-seg{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:9px;
+    font-weight:700;
+    line-height:1;
+    color:#fff;
+    min-height:0;
+  }
+  .vertical-action-seg.actioned{background:var(--navy-700);}
+  .vertical-action-seg.pending{background:#cdd6e0;color:var(--text-600);}
+  .vertical-action-label{
+    margin-top:5px;
+    font-size:9.5px;
+    font-weight:700;
+    color:var(--text-600);
+    text-align:center;
+    line-height:1.12;
+    min-height:23px;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
 
   /* ── MISC ── */
   canvas{max-width:100%;}
@@ -279,11 +354,23 @@
       <div class="sparkline-grid" id="taskBreakdownGrid"></div>
     </div>
 
-    <!-- ABOVE FOLD: 6. Actioned vs Pending + Classification Summary -->
-    <div class="grid-2">
+    <!-- ABOVE FOLD: 6. Actioned vs Pending + Action Taken Summary + Classification Summary -->
+    <div class="overview-action-grid">
       <div class="panel">
         <h2>Actioned vs Pending by classification <span class="tag">selected week</span></h2>
         <div id="actionedPendingBars"></div>
+      </div>
+      <div class="panel">
+        <h2>Action taken summary <span class="tag">completed rows</span></h2>
+        <div class="compact-donut-wrap">
+          <canvas id="actionTakenChart" height="132"></canvas>
+          <div class="compact-action-table" style="width:100%;">
+            <table>
+              <thead><tr><th>Action Taken</th><th>%</th></tr></thead>
+              <tbody id="actionTakenTableBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <div class="panel">
         <h2>Classification summary <span class="tag">selected week</span></h2>
@@ -302,7 +389,7 @@
         <h2>Top 10 article descriptions actioned <span class="tag" id="top10ActionedTag"></span></h2>
         <div class="table-scroll" style="max-height:280px;">
           <table>
-            <thead><tr><th>#</th><th>Article Description</th><th>Completed</th><th>Pending</th><th>Top Issue</th><th>Top Action</th></tr></thead>
+            <thead><tr><th>#</th><th>Article Description</th><th>Completed</th><th>Pending</th><th>Top Reason Code</th><th>Top Action Taken</th></tr></thead>
             <tbody id="top10ActionedBody"></tbody>
           </table>
         </div>
@@ -312,41 +399,27 @@
         <canvas id="top10BarChart" height="250"></canvas>
       </div>
       <div class="panel">
-        <h2>Top 10 articles by reason code <span class="tag">completed rows only</span></h2>
-        <div class="table-scroll" style="max-height:280px;">
+        <h2>Top 10 articles by reason code <span class="tag">rows with reason codes · selected week</span></h2>
+        <div class="table-scroll" style="max-height:none;overflow:visible;">
           <table>
-            <thead><tr><th>#</th><th>Article Description</th><th>Top Reason Code</th><th>Tasks</th><th>% of Total</th></tr></thead>
+            <thead><tr><th>#</th><th>Article Description</th><th>Top Reason Code</th><th>Tasks with Reason</th><th>Stores</th><th>% of Reason-Coded Tasks</th></tr></thead>
             <tbody id="top10ReasonBody"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- BELOW FOLD: 10+11. Action Taken Summary + Manager Follow-Up -->
-    <div class="grid-2">
-      <div class="panel">
-        <h2>Action taken summary <span class="tag">completed rows · rep comment</span></h2>
-        <div style="display:flex;gap:16px;align-items:flex-start;">
-          <div style="flex-shrink:0;width:160px;"><canvas id="actionTakenChart" height="160"></canvas></div>
-          <div style="flex:1;">
-            <table>
-              <thead><tr><th>Action Taken</th><th>Completed</th><th>% of Completed</th></tr></thead>
-              <tbody id="actionTakenTableBody"></tbody>
-            </table>
-          </div>
+    <!-- BELOW FOLD: 10. Manager Follow-Up -->
+    <div class="panel">
+      <h2>Manager follow-up <span class="tag">selected week</span></h2>
+      <div class="grid-2" style="gap:12px;">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--text-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;">Top Managers with Pending Tasks</div>
+          <div id="managerPendingList"></div>
         </div>
-      </div>
-      <div class="panel">
-        <h2>Manager follow-up <span class="tag">selected week</span></h2>
-        <div class="grid-2" style="gap:12px;">
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;">Top Managers with Pending Tasks</div>
-            <div id="managerPendingList"></div>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:700;color:var(--text-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;">Top Managers with Pending Tasks by Region</div>
-            <div id="managerRegionList"></div>
-          </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--text-600);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;">Top Managers with Pending Tasks by Region</div>
+          <div id="managerRegionList"></div>
         </div>
       </div>
     </div>
@@ -712,7 +785,7 @@ function statusColor(s){
 
 let state = {
   client: '__all__', week: null, banner: '__all__', region: '__all__', classification: '__all__',
-  status: '__all__', search: '', page: 1, pageSize: 50,
+  status: '__all__', search: '', page: 1, pageSize: 50, sparkPoint: null,
 };
 
 let clientFilterEl, weekFilterEl, bannerFilterEl, regionFilterEl, classFilterEl, statusFilterEl;
@@ -932,20 +1005,29 @@ function renderActionedPendingBars(){
   const maxTotal = Math.max(1, ...stats.map(s=>s.total));
   const container = document.getElementById('actionedPendingBars');
   if (stats.length === 0) { container.innerHTML = `<div class="muted" style="padding:16px;text-align:center;">No rows match these filters.</div>`; return; }
-  container.innerHTML = stats.map(s => {
-    const actionedPct = (s.actioned/maxTotal)*100;
-    const pendingPct = (s.pending/maxTotal)*100;
-    return `<div class="bar-row">
-      <div class="bar-label">${s.cls}</div>
-      <div style="display:flex;align-items:center;">
-        <div class="bar-track" style="flex:1;">
-          <div class="bar-seg actioned" style="width:${actionedPct}%;"><span class="bar-seg-label">${s.actioned}</span></div>
-          <div class="bar-seg pending" style="width:${pendingPct}%;"><span class="bar-seg-label" style="color:var(--text-600);">${s.pending}</span></div>
-        </div>
-        <span class="bar-total">${s.total.toLocaleString()}</span>
-      </div>
+  container.innerHTML = `
+    <div class="vertical-action-chart">
+      ${stats.map(s => {
+        const barHeight = Math.max(8, Math.round((s.total/maxTotal)*132));
+        const actionedPct = s.total ? (s.actioned/s.total)*100 : 0;
+        const pendingPct = s.total ? (s.pending/s.total)*100 : 0;
+        const showActionedLabel = actionedPct >= 14 || s.actioned > 0 && s.total < 1000;
+        const showPendingLabel = pendingPct >= 14 || s.pending > 0 && s.total < 1000;
+        const tooltip = `${s.cls}\nActioned: ${s.actioned.toLocaleString()}\nPending: ${s.pending.toLocaleString()}\nTotal: ${s.total.toLocaleString()}`;
+        return `<div class="vertical-action-col" title="${tooltip}">
+          <div class="vertical-action-total">${s.total.toLocaleString()}</div>
+          <div class="vertical-action-bar" style="height:${barHeight}px;">
+            <div class="vertical-action-seg actioned" style="height:${actionedPct}%;">${showActionedLabel ? s.actioned.toLocaleString() : ''}</div>
+            <div class="vertical-action-seg pending" style="height:${pendingPct}%;">${showPendingLabel ? s.pending.toLocaleString() : ''}</div>
+          </div>
+          <div class="vertical-action-label">${s.cls}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="legend-row" style="justify-content:center;margin-top:2px;">
+      <span><span class="legend-dot" style="background:var(--navy-700);"></span>Actioned</span>
+      <span><span class="legend-dot" style="background:#cdd6e0;"></span>Pending</span>
     </div>`;
-  }).join('');
 }
 
 function renderClassificationSummaryTable(){
@@ -998,12 +1080,13 @@ function renderActionTakenChart(){
   });
   const tbody = document.getElementById('actionTakenTableBody');
   if (!tbody) return;
-  if (sorted.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="muted" style="padding:12px;">No actioned rows.</td></tr>`; return; }
-  tbody.innerHTML = sorted.map(([action, count], i) => {
+  if (sorted.length === 0) { tbody.innerHTML = `<tr><td colspan="2" class="muted" style="padding:12px;">No actioned rows.</td></tr>`; return; }
+  tbody.innerHTML = sorted.slice(0,5).map(([action, count], i) => {
     const pct = totalActioned ? Math.round((count/totalActioned)*1000)/10 : 0;
-    return `<tr>
-      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${palette[i]||'#8497a8'};margin-right:5px;vertical-align:middle;"></span>${action}</td>
-      <td>${count.toLocaleString()}</td><td>${pct}%</td></tr>`;
+    const shortAction = action.length > 32 ? action.slice(0, 31) + '…' : action;
+    return `<tr title="${action}">
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${palette[i]||'#8497a8'};margin-right:5px;vertical-align:middle;"></span>${shortAction}</td>
+      <td>${pct}%</td></tr>`;
   }).join('');
 }
 
@@ -1080,11 +1163,13 @@ function renderTaskBreakdown(){
   const classes = Object.keys(CLASS_HEX);
   const grid = document.getElementById('taskBreakdownGrid');
   grid.innerHTML = classes.map(cls => `
-    <div class="spark-card">
+    <div class="spark-card" title="Hover for date and value. Click a point to filter the dashboard to that week and classification.">
       <div class="spark-head"><span class="spark-label">${cls}</span></div>
       <div class="spark-value" id="spark-value-${safeId(cls)}">0</div>
       <div class="spark-pct" id="spark-pct-${safeId(cls)}"></div>
       <div class="spark-canvas-wrap"><canvas id="spark-canvas-${safeId(cls)}"></canvas></div>
+      <div class="spark-selected" id="spark-selected-${safeId(cls)}"></div>
+      <div class="spark-click-hint">Hover for value · click to filter</div>
     </div>
   `).join('');
 
@@ -1094,20 +1179,64 @@ function renderTaskBreakdown(){
     const pct = totalForPct ? Math.round((count/totalForPct)*1000)/10 : 0;
     const valueEl = document.getElementById(`spark-value-${id}`);
     const pctEl = document.getElementById(`spark-pct-${id}`);
+    const selectedEl = document.getElementById(`spark-selected-${id}`);
     if (valueEl) valueEl.textContent = count.toLocaleString();
     if (pctEl) pctEl.textContent = `${pct}% of all lines this week`;
 
     const data = weeks.map(w => byWeek[w][cls] || 0);
+    if (selectedEl && state.sparkPoint && state.sparkPoint.cls === cls) {
+      selectedEl.textContent = `${state.sparkPoint.week}: ${Number(state.sparkPoint.value || 0).toLocaleString()} lines`;
+    } else if (selectedEl) {
+      selectedEl.textContent = '';
+    }
     const ctx = document.getElementById(`spark-canvas-${id}`);
     if (sparkChartInstances[id]) sparkChartInstances[id].destroy();
     sparkChartInstances[id] = new Chart(ctx, {
       type: 'line',
-      data: { labels: weeks, datasets: [{ data, borderColor: CLASS_HEX[cls], backgroundColor: CLASS_HEX[cls] + '22', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
+      data: { labels: weeks, datasets: [{ data, borderColor: CLASS_HEX[cls], backgroundColor: CLASS_HEX[cls] + '22', fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 12, borderWidth: 2 }] },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        interaction: { mode: 'nearest', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            displayColors: false,
+            callbacks: {
+              title: items => items?.[0]?.label ? `Week ending ${items[0].label}` : '',
+              label: item => `${cls}: ${Number(item.raw || 0).toLocaleString()} lines`,
+              afterLabel: () => 'Click to filter this dashboard'
+            }
+          }
+        },
         scales: { x: { display: false }, y: { display: false } },
         elements: { line: { borderJoinStyle: 'round' } },
+        onHover: (event, elements) => {
+          if (event?.native?.target) event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+        },
+        onClick: async (event, elements, chart) => {
+          const points = elements.length ? elements : chart.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true);
+          if (!points.length) return;
+          const idx = points[0].index;
+          const clickedWeek = weeks[idx];
+          const clickedValue = data[idx] || 0;
+          state.sparkPoint = { cls, week: clickedWeek, value: clickedValue };
+          const selectedEl = document.getElementById(`spark-selected-${id}`);
+          if (selectedEl) selectedEl.textContent = `${clickedWeek}: ${clickedValue.toLocaleString()} lines`;
+          if (classFilterEl) { classFilterEl.value = cls; state.classification = cls; }
+          if (weekFilterEl && clickedWeek && state.week !== clickedWeek) {
+            weekFilterEl.value = clickedWeek;
+            state.week = clickedWeek;
+            state.page = 1; feedbackPage = 1;
+            document.getElementById('authStatus').textContent = `Loading week ${state.week}...`;
+            const token = await getGraphToken();
+            await loadWeek(token, state.week);
+            document.getElementById('authStatus').textContent = 'Connected';
+          } else {
+            state.page = 1; feedbackPage = 1;
+          }
+          rerenderAll();
+        },
       },
     });
   });
@@ -1257,28 +1386,26 @@ function renderTop10Actioned(){
   const articleMap = {};
   rows.forEach(r => {
     const key = r.article || 'Unknown';
-    articleMap[key] = articleMap[key] || {completed:0, pending:0, issues:{}, actions:{}};
+    articleMap[key] = articleMap[key] || {completed:0, pending:0, reasonCodes:{}, actionTaken:{}};
     if (isActioned(r.actionStatus)) {
       articleMap[key].completed++;
-      const a = r.action || 'Unknown';
-      articleMap[key].actions[a] = (articleMap[key].actions[a]||0) + 1;
+      const rc = r.reasonCode && String(r.reasonCode).trim();
+      if (rc) articleMap[key].reasonCodes[rc] = (articleMap[key].reasonCodes[rc]||0) + 1;
+      const at = r.actionComment && String(r.actionComment).trim();
+      if (at) articleMap[key].actionTaken[at] = (articleMap[key].actionTaken[at]||0) + 1;
     }
     else articleMap[key].pending++;
-    const cls = r.classification || 'Unknown';
-    articleMap[key].issues[cls] = (articleMap[key].issues[cls]||0) + 1;
   });
   const sorted = Object.entries(articleMap).sort((a,b) => b[1].completed - a[1].completed).slice(0,10);
   const body = document.getElementById('top10ActionedBody');
   if (!body) return;
-  const clsColors = {'Out of Stock':'#c93b3b','Overstock':'#d9a72e','Understock':'#2c8fae','No Sales (Idle Stock)':'#7c8aa0','Negative SOH':'#9b2fae'};
   if (sorted.length === 0) { body.innerHTML = `<tr><td colspan="6" class="muted" style="padding:16px;text-align:center;">No rows match these filters.</td></tr>`; return; }
   body.innerHTML = sorted.map(([art, g], i) => {
-    const topIssue = Object.entries(g.issues).sort((a,b)=>b[1]-a[1])[0];
-    const col = topIssue ? (clsColors[topIssue[0]]||'#8497a8') : '#8497a8';
-    const topAction = Object.entries(g.actions).sort((a,b)=>b[1]-a[1])[0];
+    const topReason = Object.entries(g.reasonCodes).sort((a,b)=>b[1]-a[1])[0];
+    const topActionTaken = Object.entries(g.actionTaken).sort((a,b)=>b[1]-a[1])[0];
     return `<tr><td>${i+1}</td><td>${art}</td><td>${g.completed}</td><td>${g.pending}</td>
-      <td><span style="color:${col};font-weight:600;">${topIssue?topIssue[0]:''}</span></td>
-      <td>${topAction?topAction[0]:'<span class="muted">\u2014</span>'}</td></tr>`;
+      <td>${topReason?topReason[0]:'<span class="muted">No reason captured</span>'}</td>
+      <td>${topActionTaken?topActionTaken[0]:'<span class="muted">No action comment captured</span>'}</td></tr>`;
   }).join('');
   document.getElementById('top10ActionedTag').textContent = `week ${state.week}`;
 }
@@ -1286,23 +1413,26 @@ function renderTop10Actioned(){
 function renderTop10ByReasonCode(){
   const rows = filteredRows();
   const articleMap = {};
+  let totalReasonCodedTasks = 0;
   rows.forEach(r => {
     const rc = r.reasonCode;
-    if (!rc) return; // skip rows with no reason code
+    if (!rc) return; // only count rows where the rep captured a reason code
     const key = r.article || 'Unknown';
-    articleMap[key] = articleMap[key] || {total:0, reasons:{}};
+    articleMap[key] = articleMap[key] || {total:0, reasons:{}, stores:new Set()};
     articleMap[key].total++;
+    totalReasonCodedTasks++;
     articleMap[key].reasons[rc] = (articleMap[key].reasons[rc]||0) + 1;
+    if (r.store) articleMap[key].stores.add(r.store);
   });
-  const totalAll = rows.length || 1;
+  const denominator = totalReasonCodedTasks || 1;
   const sorted = Object.entries(articleMap).sort((a,b) => b[1].total - a[1].total).slice(0,10);
   const body = document.getElementById('top10ReasonBody');
   if (!body) return;
-  if (sorted.length === 0) { body.innerHTML = `<tr><td colspan="5" class="muted" style="padding:16px;text-align:center;">No rows match these filters.</td></tr>`; return; }
+  if (sorted.length === 0) { body.innerHTML = `<tr><td colspan="6" class="muted" style="padding:16px;text-align:center;">No rows with reason codes match these filters.</td></tr>`; return; }
   body.innerHTML = sorted.map(([art, g], i) => {
     const topRc = Object.entries(g.reasons).sort((a,b)=>b[1]-a[1])[0];
-    const pct = Math.round((g.total/totalAll)*1000)/10;
-    return `<tr><td>${i+1}</td><td>${art}</td><td>${topRc?topRc[0]:''}</td><td>${g.total}</td><td>${pct}%</td></tr>`;
+    const pct = Math.round((g.total/denominator)*1000)/10;
+    return `<tr><td>${i+1}</td><td>${art}</td><td>${topRc?topRc[0]:''}</td><td>${g.total.toLocaleString()}</td><td>${g.stores.size.toLocaleString()}</td><td>${pct}%</td></tr>`;
   }).join('');
 }
 
